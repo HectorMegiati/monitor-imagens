@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+pillow
+imagehash
+feedparser
+numpy
+opencv-python-headless
