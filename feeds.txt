@@ -1,0 +1,2 @@
+# COLE AQUI OS RSS DO GOOGLE ALERTS (1 por linha)
+# Exemplo: https://www.google.com/alerts/feeds/XXXX/XXXX
