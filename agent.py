@@ -18,7 +18,7 @@ import imagehash
 ALERT_THRESHOLD_PERCENT = 75
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 12
-CACHE_REFRESH_SECONDS = 48 * 60 * 60
+CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
@@ -53,36 +53,43 @@ USER_AGENT = {"User-Agent": "Mozilla/5.0"}
 def load_lines(path):
     if not os.path.exists(path):
         return []
-    with open(path,"r",encoding="utf-8") as f:
-        return [l.strip() for l in f.readlines() if l.strip() and not l.startswith("#")]
+    with open(path, "r", encoding="utf-8") as f:
+        lines = []
+        for l in f.readlines():
+            l = l.strip()
+            if not l:
+                continue
+            if l.startswith("#"):
+                continue
+            lines.append(l)
+        return lines
 
-def load_json(path,default):
+def load_json(path, default):
     if not os.path.exists(path):
         return default
-    with open(path,"r",encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def save_json(path,obj):
-    os.makedirs(os.path.dirname(path),exist_ok=True)
-    with open(path,"w",encoding="utf-8") as f:
-        json.dump(obj,f,indent=2)
+def save_json(path, obj):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2, ensure_ascii=False)
 
 # =========================
 # EMAIL
 # =========================
 
-def send_email(subject,body):
-
+def send_email(subject, body):
     print("Enviando e-mail de alerta...")
 
-    msg = MIMEText(body,"plain","utf-8")
+    msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = EMAIL_USER
     msg["To"] = EMAIL_DESTINATION
 
-    server = smtplib.SMTP(EMAIL_HOST,EMAIL_PORT)
+    server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
     server.starttls()
-    server.login(EMAIL_USER,EMAIL_PASSWORD)
+    server.login(EMAIL_USER, EMAIL_PASSWORD)
 
     server.sendmail(
         EMAIL_USER,
@@ -91,7 +98,6 @@ def send_email(subject,body):
     )
 
     server.quit()
-
     print("E-mail enviado.")
 
 # =========================
@@ -105,16 +111,16 @@ def safe_domain(url):
     except:
         return ""
 
-def is_whitelisted(url,entries):
-
+def is_whitelisted(url, entries):
     domain = safe_domain(url)
 
     for w in entries:
-
+        # entrada com path (ex: instagram.com/usuario)
         if "/" in w:
             if w in url:
                 return True
         else:
+            # entrada só domínio
             if domain == w or domain.endswith("." + w):
                 return True
 
@@ -125,7 +131,7 @@ def is_whitelisted(url,entries):
 # =========================
 
 def download_bytes(url):
-    r = requests.get(url,headers=USER_AGENT,timeout=20)
+    r = requests.get(url, headers=USER_AGENT, timeout=20)
     r.raise_for_status()
     return r.content
 
@@ -134,7 +140,7 @@ def bytes_to_pil(b):
 
 def pil_to_gray_np(pil):
     arr = np.array(pil)
-    return cv2.cvtColor(arr,cv2.COLOR_RGB2GRAY)
+    return cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
 
 def hash_triplet(pil):
     return (
@@ -148,78 +154,66 @@ def hash_triplet(pil):
 # =========================
 
 def orb_compute(gray):
-
     orb = cv2.ORB_create(nfeatures=1200)
-    kp,des = orb.detectAndCompute(gray,None)
-
+    kp, des = orb.detectAndCompute(gray, None)
     return des
 
-def orb_match(gray,ref_des):
-
+def orb_match(gray, ref_des):
     if ref_des is None:
         return 0
 
     des = orb_compute(gray)
-
     if des is None:
         return 0
 
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
-
-    matches = bf.match(ref_des,des)
-
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = bf.match(ref_des, des)
     good = [m for m in matches if m.distance < 60]
-
     return len(good)
 
 # =========================
 # HASH SCORE
 # =========================
 
-def similarity_hash_percent(pil,ref):
-
-    ph,dh,wh = hash_triplet(pil)
+def similarity_hash_percent(pil, ref):
+    ph, dh, wh = hash_triplet(pil)
 
     d1 = ph - imagehash.hex_to_hash(ref["phash"])
     d2 = dh - imagehash.hex_to_hash(ref["dhash"])
     d3 = wh - imagehash.hex_to_hash(ref["whash"])
 
-    score = (1 - ((d1+d2+d3)/30)) * 100
-
-    return max(0,score)
+    # score aproximado (0 a 100)
+    score = (1 - ((d1 + d2 + d3) / 30)) * 100
+    return max(0, score)
 
 # =========================
 # WOO PRODUCTS
 # =========================
 
 def wc_products():
-
-    products=[]
-    page=1
+    products = []
+    page = 1
 
     while True:
+        url = f"{WC_BASE_URL}/wp-json/wc/v3/products"
 
-        url=f"{WC_BASE_URL}/wp-json/wc/v3/products"
-
-        params={
-            "consumer_key":WC_CONSUMER_KEY,
-            "consumer_secret":WC_CONSUMER_SECRET,
-            "per_page":100,
-            "page":page
+        params = {
+            "consumer_key": WC_CONSUMER_KEY,
+            "consumer_secret": WC_CONSUMER_SECRET,
+            "per_page": 100,
+            "page": page
         }
 
-        r=requests.get(url,params=params,headers=USER_AGENT)
-
-        data=r.json()
+        r = requests.get(url, params=params, headers=USER_AGENT)
+        data = r.json()
 
         if not data:
             break
 
-        products+=data
-        page+=1
+        products += data
+        page += 1
 
     print(f"Produtos encontrados no WooCommerce: {len(products)}")
-
     return products
 
 # =========================
@@ -227,49 +221,41 @@ def wc_products():
 # =========================
 
 def build_refs():
-
-    refs=[]
-
-    products=wc_products()
+    refs = []
+    products = wc_products()
 
     for p in products:
+        name = p.get("name", "(sem nome)")
+        link = p.get("permalink", "")
 
-        name=p["name"]
-        link=p["permalink"]
-
-        images=p.get("images",[])[:IMAGES_PER_PRODUCT]
+        images = (p.get("images", []) or [])[:IMAGES_PER_PRODUCT]
 
         for img in images:
-
             try:
+                url = img.get("src")
+                if not url:
+                    continue
 
-                url=img["src"]
+                b = download_bytes(url)
+                pil = bytes_to_pil(b)
 
-                b=download_bytes(url)
-                pil=bytes_to_pil(b)
-
-                ph,dh,wh=hash_triplet(pil)
-
-                gray=pil_to_gray_np(pil)
-
-                des=orb_compute(gray)
+                ph, dh, wh = hash_triplet(pil)
+                gray = pil_to_gray_np(pil)
+                des = orb_compute(gray)
 
                 refs.append({
-
-                    "product_name":name,
-                    "product_url":link,
-                    "phash":str(ph),
-                    "dhash":str(dh),
-                    "whash":str(wh),
-                    "orb":des.tolist() if des is not None else None
-
+                    "product_name": name,
+                    "product_url": link,
+                    "phash": str(ph),
+                    "dhash": str(dh),
+                    "whash": str(wh),
+                    "orb": des.tolist() if des is not None else None
                 })
 
             except:
                 continue
 
     print(f"Referências de imagem criadas: {len(refs)}")
-
     return refs
 
 # =========================
@@ -277,27 +263,19 @@ def build_refs():
 # =========================
 
 def load_cache():
+    cache = load_json(CACHE_FILE, {"last": 0, "refs": []})
 
-    cache=load_json(CACHE_FILE,{"last":0,"refs":[]})
-
-    if time.time()-cache["last"] > CACHE_REFRESH_SECONDS:
-
-        print("Atualizando cache de imagens do site...")
-
-        refs=build_refs()
-
-        cache={
-            "last":time.time(),
-            "refs":refs
+    if time.time() - cache.get("last", 0) > CACHE_REFRESH_SECONDS or not cache.get("refs"):
+        print("Atualizando cache de imagens do site (48h)...")
+        refs = build_refs()
+        cache = {
+            "last": time.time(),
+            "refs": refs
         }
-
-        save_json(CACHE_FILE,cache)
-
+        save_json(CACHE_FILE, cache)
     else:
-
-        refs=cache["refs"]
-
-        print(f"Cache carregado: {len(refs)} referências")
+        refs = cache["refs"]
+        print(f"Cache carregado: {len(refs)} referências (sem atualizar)")
 
     return refs
 
@@ -306,39 +284,32 @@ def load_cache():
 # =========================
 
 def extract_page_images(url):
+    r = requests.get(url, headers=USER_AGENT, timeout=20)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    r=requests.get(url,headers=USER_AGENT,timeout=20)
-
-    soup=BeautifulSoup(r.text,"html.parser")
-
-    imgs=[]
-
+    imgs = []
     for img in soup.find_all("img"):
-
-        src=img.get("src")
-
+        src = img.get("src")
         if not src:
             continue
 
-        imgs.append(urljoin(url,src))
+        imgs.append(urljoin(url, src))
 
-        if len(imgs)>=MAX_IMAGES_PER_SUSPECT_PAGE:
+        if len(imgs) >= MAX_IMAGES_PER_SUSPECT_PAGE:
             break
 
-    return imgs,r.text
+    return imgs, r.text
 
 # =========================
 # LINKS SUSPEITOS
 # =========================
 
 def suspicious_links(text):
+    links = set()
 
-    links=set()
-
-    for m in re.findall(r"https?://\S+",text):
-
-        if any(x in m.lower() for x in ["mega.nz","drive.google.com","telegram","t.me"]):
-
+    for m in re.findall(r"https?://\S+", text):
+        low = m.lower()
+        if any(x in low for x in ["mega.nz", "drive.google.com", "telegram", "t.me"]):
             links.add(m)
 
     return list(links)
@@ -348,22 +319,16 @@ def suspicious_links(text):
 # =========================
 
 def read_rss(feeds):
-
-    urls=[]
+    urls = []
 
     for f in feeds:
-
-        d=feedparser.parse(f)
-
+        d = feedparser.parse(f)
         for e in d.entries:
-
-            if hasattr(e,"link"):
+            if hasattr(e, "link"):
                 urls.append(e.link)
 
-    urls=list(set(urls))
-
+    urls = list(set(urls))
     print(f"Links coletados do RSS: {len(urls)}")
-
     return urls
 
 # =========================
@@ -371,107 +336,106 @@ def read_rss(feeds):
 # =========================
 
 def main():
-
     print("=== MONITOR START ===")
 
-    feeds=load_lines(FEEDS_FILE)
-    whitelist=load_lines(WHITELIST_FILE)
+    feeds = load_lines(FEEDS_FILE)
+    whitelist = load_lines(WHITELIST_FILE)
 
-    seen=load_json(SEEN_FILE,{"seen":[]})
+    # ---- Compatibilidade: aceita "seen" e também "seen_urls"
+    seen_obj = load_json(SEEN_FILE, {"seen": []})
+    seen_list = seen_obj.get("seen")
+    if seen_list is None:
+        seen_list = seen_obj.get("seen_urls", [])
+        seen_obj = {"seen": seen_list}
 
     print(f"Feeds carregados: {len(feeds)}")
     print(f"Whitelist entries: {len(whitelist)}")
-    print(f"Links já vistos (cache): {len(seen['seen'])}")
+    print(f"Links já vistos (cache): {len(seen_list)}")
 
-    refs=load_cache()
+    refs = load_cache()
+    urls = read_rss(feeds)
 
-    urls=read_rss(feeds)
-
-    alerts=[]
+    alerts = []
 
     for url in urls:
-
-        if url in seen["seen"]:
+        if url in seen_list:
             continue
 
-        seen["seen"].append(url)
+        seen_list.append(url)
 
-        if is_whitelisted(url,whitelist):
+        if is_whitelisted(url, whitelist):
             continue
 
         try:
-
-            images,html=extract_page_images(url)
-
+            images, html = extract_page_images(url)
         except:
             continue
 
-        sus_links=suspicious_links(html)
+        sus_links = suspicious_links(html)
 
         for img in images:
-
             try:
-
-                b=download_bytes(img)
-                pil=bytes_to_pil(b)
-                gray=pil_to_gray_np(pil)
-
+                b = download_bytes(img)
+                pil = bytes_to_pil(b)
+                gray = pil_to_gray_np(pil)
             except:
                 continue
 
             for ref in refs:
+                score_hash = similarity_hash_percent(pil, ref)
 
-                score_hash=similarity_hash_percent(pil,ref)
-
-                if score_hash<40:
+                if score_hash < 40:
                     continue
 
-                ref_des=None
-
+                ref_des = None
                 if ref["orb"]:
-                    ref_des=np.array(ref["orb"],dtype=np.uint8)
+                    ref_des = np.array(ref["orb"], dtype=np.uint8)
 
-                matches=orb_match(gray,ref_des)
+                matches = orb_match(gray, ref_des)
+                score_orb = min(100, (matches / 18) * 100)
 
-                score_orb=min(100,(matches/18)*100)
+                score = (score_hash * 0.6) + (score_orb * 0.4)
 
-                score=(score_hash*0.6)+(score_orb*0.4)
-
-                if score>=ALERT_THRESHOLD_PERCENT:
-
+                if score >= ALERT_THRESHOLD_PERCENT:
                     alerts.append({
-                        "page":url,
-                        "product":ref["product_name"],
-                        "product_url":ref["product_url"],
-                        "image":img,
-                        "score":score,
-                        "links":sus_links
+                        "page": url,
+                        "product": ref["product_name"],
+                        "product_url": ref["product_url"],
+                        "image": img,
+                        "score": score,
+                        "links": sus_links
                     })
 
-    save_json(SEEN_FILE,seen)
+                    # Se achou um match para esse URL, não precisa continuar varrendo tudo
+                    break
+
+            # Se já tem alerta, sai do loop de imagens para esse URL
+            if alerts and alerts[-1]["page"] == url:
+                break
+
+    # salva em formato "seen" (novo)
+    save_json(SEEN_FILE, {"seen": seen_list})
 
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
     if alerts:
-
-        body="Alertas de Possíveis Fraudes\n\n"
+        body = "Alertas de Possíveis Fraudes\n\n"
 
         for a in alerts:
-
-            body+=f"Página suspeita: {a['page']}\n"
-            body+=f"Produto parecido: {a['product']}\n"
-            body+=f"Seu produto: {a['product_url']}\n"
-            body+=f"Imagem suspeita: {a['image']}\n"
-            body+=f"Score: {a['score']:.1f}%\n"
+            body += f"Página suspeita: {a['page']}\n"
+            body += f"Produto parecido: {a['product']}\n"
+            body += f"Seu produto: {a['product_url']}\n"
+            body += f"Imagem suspeita: {a['image']}\n"
+            body += f"Score: {a['score']:.1f}%\n"
 
             if a["links"]:
-                body+="Links suspeitos encontrados:\n"
+                body += "Links suspeitos encontrados:\n"
                 for l in a["links"]:
-                    body+=f"- {l}\n"
+                    body += f"- {l}\n"
 
-            body+="\n"
+            body += "\n"
 
-        send_email("Alertas de Possíveis Fraudes",body)
+        send_email("Alertas de Possíveis Fraudes", body)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
