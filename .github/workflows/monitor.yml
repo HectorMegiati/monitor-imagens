@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Instalar Python
         uses: actions/setup-python@v5
@@ -40,5 +42,7 @@ jobs:
           git config user.name monitor-bot
           git config user.email monitor-bot@users.noreply.github.com
           git add state/seen.json state/ref_cache.json
-          git diff --staged --quiet || git commit -m "Update state"
-          git push
+          git diff --staged --quiet && exit 0
+          git commit -m "Update state"
+          git pull --rebase origin main
+          git push origin main
