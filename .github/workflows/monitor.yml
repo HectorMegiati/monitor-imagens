@@ -1,6 +1,8 @@
 name: Monitor Fraudes (12h)
 
 on:
+  permissions:
+    contents: write
   schedule:
     - cron: "0 */12 * * *"
   workflow_dispatch:
