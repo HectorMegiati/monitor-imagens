@@ -22,13 +22,13 @@ CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
-# --- NOVO: buscas adicionais (web + marketplaces) ---
+# Buscas adicionais
 SEARCH_TERMS_FILE = "search_terms.txt"   # termos para web (DuckDuckGo/Bing)
 MARKET_TERMS_FILE = "market_terms.txt"   # termos para Mercado Livre + Shopee
 
-WEB_RESULTS_PER_TERM = 12                # quantos links pegar por termo (Duck/Bing)
-MARKET_RESULTS_PER_TERM = 12             # quantos links pegar por termo (ML/Shopee)
-MAX_TOTAL_URLS_PER_RUN = 250             # limite total de URLs por execução (segurança)
+WEB_RESULTS_PER_TERM = 12
+MARKET_RESULTS_PER_TERM = 12
+MAX_TOTAL_URLS_PER_RUN = 250
 
 # =========================
 # PATHS
@@ -94,20 +94,12 @@ def safe_domain(url):
         return ""
 
 def normalize_url(u: str) -> str:
-    """
-    Normaliza URL para reduzir duplicados:
-    - remove fragment (#)
-    - remove alguns parâmetros comuns de tracking
-    """
     try:
         p = urlparse(u.strip())
         if not p.scheme or not p.netloc:
             return u.strip()
 
-        # remove fragment
         fragment = ""
-
-        # filtra query
         q = []
         for k, v in parse_qsl(p.query, keep_blank_values=True):
             lk = k.lower()
@@ -169,12 +161,10 @@ def send_email(subject, body):
 def is_whitelisted(url, entries):
     domain = safe_domain(url)
     for w in entries:
-        # entrada com path (ex: instagram.com/usuario)
         if "/" in w:
             if w in url:
                 return True
         else:
-            # entrada só domínio
             if domain == w or domain.endswith("." + w):
                 return True
     return False
@@ -235,7 +225,6 @@ def similarity_hash_percent(pil, ref):
     d2 = dh - imagehash.hex_to_hash(ref["dhash"])
     d3 = wh - imagehash.hex_to_hash(ref["whash"])
 
-    # score aproximado (0 a 100)
     score = (1 - ((d1 + d2 + d3) / 30)) * 100
     return max(0, score)
 
@@ -257,7 +246,7 @@ def wc_products():
             "page": page
         }
 
-        r = requests.get(url, params=params, headers=USER_AGENT)
+        r = requests.get(url, params=params, headers=USER_AGENT, timeout=20)
         data = r.json()
 
         if not data:
@@ -305,7 +294,7 @@ def build_refs():
                     "orb": des.tolist() if des is not None else None
                 })
 
-            except:
+            except Exception:
                 continue
 
     print(f"Referências de imagem criadas: {len(refs)}")
@@ -341,8 +330,17 @@ def extract_page_images(url):
     soup = BeautifulSoup(r.text, "html.parser")
 
     imgs = []
+
+    og = soup.find("meta", property="og:image")
+    if og and og.get("content"):
+        imgs.append(urljoin(url, og["content"]))
+
+    tw = soup.find("meta", attrs={"name": "twitter:image"})
+    if tw and tw.get("content"):
+        imgs.append(urljoin(url, tw["content"]))
+
     for img in soup.find_all("img"):
-        src = img.get("src")
+        src = img.get("src") or img.get("data-src") or img.get("data-original")
         if not src:
             continue
 
@@ -351,6 +349,7 @@ def extract_page_images(url):
         if len(imgs) >= MAX_IMAGES_PER_SUSPECT_PAGE:
             break
 
+    imgs = dedupe_limit(imgs, MAX_IMAGES_PER_SUSPECT_PAGE)
     return imgs, r.text
 
 # =========================
@@ -389,90 +388,106 @@ def read_rss(feeds):
 # =========================
 
 def search_duckduckgo(term, max_results=WEB_RESULTS_PER_TERM):
-    """
-    DuckDuckGo HTML (menos JS).
-    Pode mudar no tempo, então é best-effort.
-    """
     urls = []
     q = term.strip().replace(" ", "+")
-    url = f"https://duckduckgo.com/html/?q={q}"
 
-    try:
-        r = requests.get(url, headers=USER_AGENT, timeout=20)
-        soup = BeautifulSoup(r.text, "html.parser")
+    candidates = [
+        f"https://duckduckgo.com/html/?q={q}",
+        f"https://html.duckduckgo.com/html/?q={q}",
+    ]
 
-        # seletores comuns
-        for a in soup.select("a.result__a"):
-            href = a.get("href")
-            if href and href.startswith("http"):
-                urls.append(href)
-            if len(urls) >= max_results:
+    for url in candidates:
+        try:
+            r = requests.get(url, headers=USER_AGENT, timeout=20)
+            soup = BeautifulSoup(r.text, "html.parser")
+
+            for a in soup.select("a.result__a"):
+                href = a.get("href")
+                if href and href.startswith("http"):
+                    urls.append(href)
+
+            if not urls:
+                for a in soup.find_all("a", href=True):
+                    href = a.get("href")
+                    if not href:
+                        continue
+                    if href.startswith("http") and "duckduckgo.com" not in href:
+                        urls.append(href)
+
+            urls = dedupe_limit(urls, max_results)
+
+            if urls:
                 break
-    except:
-        pass
+
+        except Exception:
+            continue
 
     return dedupe_limit(urls, max_results)
 
 def search_bing(term, max_results=WEB_RESULTS_PER_TERM):
-    """
-    Bing HTML (em geral traz bastante resultado e costuma ser mais "amigável" que Google pra automação simples).
-    """
     urls = []
     q = term.strip()
-    url = "https://www.bing.com/search?" + urlencode({"q": q})
+    url = "https://www.bing.com/search?" + urlencode({"q": q, "setlang": "pt-BR"})
 
     try:
         r = requests.get(url, headers=USER_AGENT, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # resultados: li.b_algo h2 a
-        for li in soup.select("li.b_algo h2 a"):
-            href = li.get("href")
+        for a in soup.select("li.b_algo h2 a"):
+            href = a.get("href")
             if href and href.startswith("http"):
                 urls.append(href)
-            if len(urls) >= max_results:
-                break
-    except:
+
+        if not urls:
+            for a in soup.find_all("a", href=True):
+                href = a.get("href")
+                if not href:
+                    continue
+                if href.startswith("http") and "bing.com" not in href:
+                    urls.append(href)
+
+    except Exception:
         pass
 
     return dedupe_limit(urls, max_results)
 
 # =========================
-# BUSCA MARKETPLACES: Mercado Livre + Shopee
+# BUSCA MARKETPLACES
 # =========================
 
 def search_mercadolivre(term, max_results=MARKET_RESULTS_PER_TERM):
     urls = []
-    slug = re.sub(r"\s+", "-", term.strip())
-    url = f"https://lista.mercadolivre.com.br/{slug}"
+    query = term.strip()
+    url = "https://lista.mercadolivre.com.br/" + query.replace(" ", "-")
 
     try:
         r = requests.get(url, headers=USER_AGENT, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # Mercado Livre muda bastante; tentamos âncoras típicas
         for a in soup.find_all("a", href=True):
             href = a["href"]
+
             if "mercadolivre.com.br" not in href:
                 continue
-            # muitas URLs de item contém /MLB- ou /p/
-            if ("/MLB-" in href) or ("/p/" in href):
+
+            if any(x in href for x in ["/MLB-", "/p/", "/itm", "/produto"]):
                 urls.append(href)
-            if len(urls) >= max_results * 2:  # pega um pouco a mais antes de dedupe
-                break
-    except:
+
+        if not urls:
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                if "mercadolivre.com.br" in href and "/MLB-" in href:
+                    urls.append(href)
+
+    except Exception:
         pass
 
     return dedupe_limit(urls, max_results)
 
 def search_shopee(term, max_results=MARKET_RESULTS_PER_TERM):
-    """
-    Shopee é bem JS-heavy e pode retornar pouco HTML.
-    Best-effort: tenta achar links /product/ no HTML; se vier 0, não quebra o agente.
-    """
     urls = []
-    q = term.strip()
-    url = "https://shopee.com.br/search?" + urlencode({"keyword": q})
+    query = term.strip()
+    url = "https://shopee.com.br/search?" + urlencode({"keyword": query})
 
     try:
         r = requests.get(url, headers=USER_AGENT, timeout=20)
@@ -480,14 +495,17 @@ def search_shopee(term, max_results=MARKET_RESULTS_PER_TERM):
 
         for a in soup.find_all("a", href=True):
             href = a["href"]
+
             if "/product/" in href:
-                full = href
-                if full.startswith("/"):
-                    full = "https://shopee.com.br" + full
-                urls.append(full)
-            if len(urls) >= max_results * 2:
-                break
-    except:
+                if href.startswith("/"):
+                    href = "https://shopee.com.br" + href
+                urls.append(href)
+
+        if not urls:
+            matches = re.findall(r'https://shopee\.com\.br[^\s"\']+', r.text)
+            urls.extend(matches)
+
+    except Exception:
         pass
 
     return dedupe_limit(urls, max_results)
@@ -502,7 +520,6 @@ def main():
     feeds = load_lines(FEEDS_FILE)
     whitelist = load_lines(WHITELIST_FILE)
 
-    # ---- Compatibilidade: aceita "seen" e também "seen_urls"
     seen_obj = load_json(SEEN_FILE, {"seen": []})
     seen_list = seen_obj.get("seen")
     if seen_list is None:
@@ -518,29 +535,39 @@ def main():
     # 1) RSS
     urls_rss = read_rss(feeds)
 
-    # 2) Busca web (DuckDuckGo + Bing)
+    # 2) Busca web
     terms_web = load_lines(SEARCH_TERMS_FILE)
     urls_duck, urls_bing = [], []
     if terms_web:
-        print(f"Termos WEB (search_terms.txt): {len(terms_web)}")
+        print(f"Termos WEB ({SEARCH_TERMS_FILE}): {len(terms_web)}")
         for t in terms_web:
-            urls_duck += search_duckduckgo(t, WEB_RESULTS_PER_TERM)
-            urls_bing += search_bing(t, WEB_RESULTS_PER_TERM)
-    else:
-        print("Termos WEB: search_terms.txt não encontrado ou vazio (pulando Duck/Bing).")
+            duck = search_duckduckgo(t, WEB_RESULTS_PER_TERM)
+            bing = search_bing(t, WEB_RESULTS_PER_TERM)
 
-    # 3) Marketplaces (Mercado Livre + Shopee)
+            print(f"[WEB] {t} -> DuckDuckGo: {len(duck)} | Bing: {len(bing)}")
+
+            urls_duck += duck
+            urls_bing += bing
+    else:
+        print(f"Termos WEB: {SEARCH_TERMS_FILE} não encontrado ou vazio (pulando Duck/Bing).")
+
+    # 3) Marketplaces
     terms_market = load_lines(MARKET_TERMS_FILE)
     urls_ml, urls_shopee = [], []
     if terms_market:
-        print(f"Termos MARKET (market_terms.txt): {len(terms_market)}")
+        print(f"Termos MARKET ({MARKET_TERMS_FILE}): {len(terms_market)}")
         for t in terms_market:
-            urls_ml += search_mercadolivre(t, MARKET_RESULTS_PER_TERM)
-            urls_shopee += search_shopee(t, MARKET_RESULTS_PER_TERM)
-    else:
-        print("Termos MARKET: market_terms.txt não encontrado ou vazio (pulando ML/Shopee).")
+            ml = search_mercadolivre(t, MARKET_RESULTS_PER_TERM)
+            shp = search_shopee(t, MARKET_RESULTS_PER_TERM)
 
-    # Junta tudo e aplica limites
+            print(f"[MARKET] {t} -> Mercado Livre: {len(ml)} | Shopee: {len(shp)}")
+
+            urls_ml += ml
+            urls_shopee += shp
+    else:
+        print(f"Termos MARKET: {MARKET_TERMS_FILE} não encontrado ou vazio (pulando ML/Shopee).")
+
+    # Junta tudo
     urls_all = []
     urls_all += urls_rss
     urls_all += urls_duck
@@ -548,7 +575,6 @@ def main():
     urls_all += urls_ml
     urls_all += urls_shopee
 
-    # normaliza/dedup
     urls_all = dedupe_limit(urls_all, MAX_TOTAL_URLS_PER_RUN)
 
     print("=== FONTES DE URLs ===")
@@ -579,11 +605,10 @@ def main():
 
         try:
             images, html = extract_page_images(url)
-        except:
+        except Exception:
             continue
 
         sus_links = suspicious_links(html)
-
         found_for_url = False
 
         for img in images:
@@ -591,7 +616,7 @@ def main():
                 b = download_bytes(img)
                 pil = bytes_to_pil(b)
                 gray = pil_to_gray_np(pil)
-            except:
+            except Exception:
                 continue
 
             for ref in refs:
@@ -623,7 +648,6 @@ def main():
             if found_for_url:
                 break
 
-    # salva em formato "seen" (novo)
     save_json(SEEN_FILE, {"seen": seen_list})
 
     print("=== RESUMO DA EXECUÇÃO ===")
