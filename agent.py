@@ -535,38 +535,14 @@ def main():
     # 1) RSS
     urls_rss = read_rss(feeds)
 
-    # 2) Busca web
-    terms_web = load_lines(SEARCH_TERMS_FILE)
+    # 2) Busca web (desativada temporariamente)
     urls_duck, urls_bing = [], []
-    if terms_web:
-        print(f"Termos WEB ({SEARCH_TERMS_FILE}): {len(terms_web)}")
-        for t in terms_web:
-            duck = search_duckduckgo(t, WEB_RESULTS_PER_TERM)
-            bing = search_bing(t, WEB_RESULTS_PER_TERM)
+    print("Busca WEB direta desativada temporariamente.")
 
-            print(f"[WEB] {t} -> DuckDuckGo: {len(duck)} | Bing: {len(bing)}")
-
-            urls_duck += duck
-            urls_bing += bing
-    else:
-        print(f"Termos WEB: {SEARCH_TERMS_FILE} não encontrado ou vazio (pulando Duck/Bing).")
-
-    # 3) Marketplaces
-    terms_market = load_lines(MARKET_TERMS_FILE)
+    # 3) Marketplaces (desativados temporariamente)
     urls_ml, urls_shopee = [], []
-    if terms_market:
-        print(f"Termos MARKET ({MARKET_TERMS_FILE}): {len(terms_market)}")
-        for t in terms_market:
-            ml = search_mercadolivre(t, MARKET_RESULTS_PER_TERM)
-            shp = search_shopee(t, MARKET_RESULTS_PER_TERM)
-
-            print(f"[MARKET] {t} -> Mercado Livre: {len(ml)} | Shopee: {len(shp)}")
-
-            urls_ml += ml
-            urls_shopee += shp
-    else:
-        print(f"Termos MARKET: {MARKET_TERMS_FILE} não encontrado ou vazio (pulando ML/Shopee).")
-
+    print("Busca MARKET direta desativada temporariamente.")
+   
     # Junta tudo
     urls_all = []
     urls_all += urls_rss
