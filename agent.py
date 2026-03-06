@@ -1,8 +1,8 @@
 import os, json, time, re, smtplib
+from urllib.parse import urlparse, urljoin, urlencode, urlunparse, parse_qsl
 import requests
 import feedparser
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin
 from email.mime.text import MIMEText
 
 import numpy as np
@@ -21,6 +21,14 @@ MAX_IMAGES_PER_SUSPECT_PAGE = 12
 CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
+
+# --- NOVO: buscas adicionais (web + marketplaces) ---
+SEARCH_TERMS_FILE = "search_terms.txt"   # termos para web (DuckDuckGo/Bing)
+MARKET_TERMS_FILE = "market_terms.txt"   # termos para Mercado Livre + Shopee
+
+WEB_RESULTS_PER_TERM = 12                # quantos links pegar por termo (Duck/Bing)
+MARKET_RESULTS_PER_TERM = 12             # quantos links pegar por termo (ML/Shopee)
+MAX_TOTAL_URLS_PER_RUN = 250             # limite total de URLs por execução (segurança)
 
 # =========================
 # PATHS
@@ -44,7 +52,10 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-USER_AGENT = {"User-Agent": "Mozilla/5.0"}
+USER_AGENT = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+}
 
 # =========================
 # UTILIDADES
@@ -75,6 +86,57 @@ def save_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
+def safe_domain(url):
+    try:
+        d = urlparse(url).netloc.lower()
+        return d[4:] if d.startswith("www.") else d
+    except:
+        return ""
+
+def normalize_url(u: str) -> str:
+    """
+    Normaliza URL para reduzir duplicados:
+    - remove fragment (#)
+    - remove alguns parâmetros comuns de tracking
+    """
+    try:
+        p = urlparse(u.strip())
+        if not p.scheme or not p.netloc:
+            return u.strip()
+
+        # remove fragment
+        fragment = ""
+
+        # filtra query
+        q = []
+        for k, v in parse_qsl(p.query, keep_blank_values=True):
+            lk = k.lower()
+            if lk.startswith("utm_"):
+                continue
+            if lk in {"gclid", "fbclid", "msclkid"}:
+                continue
+            q.append((k, v))
+        query = urlencode(q, doseq=True)
+
+        return urlunparse((p.scheme, p.netloc, p.path, p.params, query, fragment))
+    except:
+        return u.strip()
+
+def dedupe_limit(urls, limit):
+    out = []
+    s = set()
+    for u in urls:
+        u = normalize_url(u)
+        if not u:
+            continue
+        if u in s:
+            continue
+        s.add(u)
+        out.append(u)
+        if len(out) >= limit:
+            break
+    return out
+
 # =========================
 # EMAIL
 # =========================
@@ -104,16 +166,8 @@ def send_email(subject, body):
 # WHITELIST
 # =========================
 
-def safe_domain(url):
-    try:
-        d = urlparse(url).netloc.lower()
-        return d[4:] if d.startswith("www.") else d
-    except:
-        return ""
-
 def is_whitelisted(url, entries):
     domain = safe_domain(url)
-
     for w in entries:
         # entrada com path (ex: instagram.com/usuario)
         if "/" in w:
@@ -123,7 +177,6 @@ def is_whitelisted(url, entries):
             # entrada só domínio
             if domain == w or domain.endswith("." + w):
                 return True
-
     return False
 
 # =========================
@@ -332,6 +385,114 @@ def read_rss(feeds):
     return urls
 
 # =========================
+# BUSCA WEB: DuckDuckGo + Bing
+# =========================
+
+def search_duckduckgo(term, max_results=WEB_RESULTS_PER_TERM):
+    """
+    DuckDuckGo HTML (menos JS).
+    Pode mudar no tempo, então é best-effort.
+    """
+    urls = []
+    q = term.strip().replace(" ", "+")
+    url = f"https://duckduckgo.com/html/?q={q}"
+
+    try:
+        r = requests.get(url, headers=USER_AGENT, timeout=20)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # seletores comuns
+        for a in soup.select("a.result__a"):
+            href = a.get("href")
+            if href and href.startswith("http"):
+                urls.append(href)
+            if len(urls) >= max_results:
+                break
+    except:
+        pass
+
+    return dedupe_limit(urls, max_results)
+
+def search_bing(term, max_results=WEB_RESULTS_PER_TERM):
+    """
+    Bing HTML (em geral traz bastante resultado e costuma ser mais "amigável" que Google pra automação simples).
+    """
+    urls = []
+    q = term.strip()
+    url = "https://www.bing.com/search?" + urlencode({"q": q})
+
+    try:
+        r = requests.get(url, headers=USER_AGENT, timeout=20)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # resultados: li.b_algo h2 a
+        for li in soup.select("li.b_algo h2 a"):
+            href = li.get("href")
+            if href and href.startswith("http"):
+                urls.append(href)
+            if len(urls) >= max_results:
+                break
+    except:
+        pass
+
+    return dedupe_limit(urls, max_results)
+
+# =========================
+# BUSCA MARKETPLACES: Mercado Livre + Shopee
+# =========================
+
+def search_mercadolivre(term, max_results=MARKET_RESULTS_PER_TERM):
+    urls = []
+    slug = re.sub(r"\s+", "-", term.strip())
+    url = f"https://lista.mercadolivre.com.br/{slug}"
+
+    try:
+        r = requests.get(url, headers=USER_AGENT, timeout=20)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # Mercado Livre muda bastante; tentamos âncoras típicas
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "mercadolivre.com.br" not in href:
+                continue
+            # muitas URLs de item contém /MLB- ou /p/
+            if ("/MLB-" in href) or ("/p/" in href):
+                urls.append(href)
+            if len(urls) >= max_results * 2:  # pega um pouco a mais antes de dedupe
+                break
+    except:
+        pass
+
+    return dedupe_limit(urls, max_results)
+
+def search_shopee(term, max_results=MARKET_RESULTS_PER_TERM):
+    """
+    Shopee é bem JS-heavy e pode retornar pouco HTML.
+    Best-effort: tenta achar links /product/ no HTML; se vier 0, não quebra o agente.
+    """
+    urls = []
+    q = term.strip()
+    url = "https://shopee.com.br/search?" + urlencode({"keyword": q})
+
+    try:
+        r = requests.get(url, headers=USER_AGENT, timeout=20)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "/product/" in href:
+                full = href
+                if full.startswith("/"):
+                    full = "https://shopee.com.br" + full
+                urls.append(full)
+            if len(urls) >= max_results * 2:
+                break
+    except:
+        pass
+
+    return dedupe_limit(urls, max_results)
+
+# =========================
 # MAIN
 # =========================
 
@@ -353,18 +514,68 @@ def main():
     print(f"Links já vistos (cache): {len(seen_list)}")
 
     refs = load_cache()
-    urls = read_rss(feeds)
+
+    # 1) RSS
+    urls_rss = read_rss(feeds)
+
+    # 2) Busca web (DuckDuckGo + Bing)
+    terms_web = load_lines(SEARCH_TERMS_FILE)
+    urls_duck, urls_bing = [], []
+    if terms_web:
+        print(f"Termos WEB (search_terms.txt): {len(terms_web)}")
+        for t in terms_web:
+            urls_duck += search_duckduckgo(t, WEB_RESULTS_PER_TERM)
+            urls_bing += search_bing(t, WEB_RESULTS_PER_TERM)
+    else:
+        print("Termos WEB: search_terms.txt não encontrado ou vazio (pulando Duck/Bing).")
+
+    # 3) Marketplaces (Mercado Livre + Shopee)
+    terms_market = load_lines(MARKET_TERMS_FILE)
+    urls_ml, urls_shopee = [], []
+    if terms_market:
+        print(f"Termos MARKET (market_terms.txt): {len(terms_market)}")
+        for t in terms_market:
+            urls_ml += search_mercadolivre(t, MARKET_RESULTS_PER_TERM)
+            urls_shopee += search_shopee(t, MARKET_RESULTS_PER_TERM)
+    else:
+        print("Termos MARKET: market_terms.txt não encontrado ou vazio (pulando ML/Shopee).")
+
+    # Junta tudo e aplica limites
+    urls_all = []
+    urls_all += urls_rss
+    urls_all += urls_duck
+    urls_all += urls_bing
+    urls_all += urls_ml
+    urls_all += urls_shopee
+
+    # normaliza/dedup
+    urls_all = dedupe_limit(urls_all, MAX_TOTAL_URLS_PER_RUN)
+
+    print("=== FONTES DE URLs ===")
+    print(f"RSS: {len(dedupe_limit(urls_rss, 9999))}")
+    print(f"DuckDuckGo: {len(dedupe_limit(urls_duck, 9999))}")
+    print(f"Bing: {len(dedupe_limit(urls_bing, 9999))}")
+    print(f"Mercado Livre: {len(dedupe_limit(urls_ml, 9999))}")
+    print(f"Shopee: {len(dedupe_limit(urls_shopee, 9999))}")
+    print(f"TOTAL (dedupe + limite): {len(urls_all)}")
 
     alerts = []
+    analyzed = 0
+    skipped_whitelist = 0
+    skipped_seen = 0
 
-    for url in urls:
+    for url in urls_all:
         if url in seen_list:
+            skipped_seen += 1
             continue
 
         seen_list.append(url)
 
         if is_whitelisted(url, whitelist):
+            skipped_whitelist += 1
             continue
+
+        analyzed += 1
 
         try:
             images, html = extract_page_images(url)
@@ -372,6 +583,8 @@ def main():
             continue
 
         sus_links = suspicious_links(html)
+
+        found_for_url = False
 
         for img in images:
             try:
@@ -383,7 +596,6 @@ def main():
 
             for ref in refs:
                 score_hash = similarity_hash_percent(pil, ref)
-
                 if score_hash < 40:
                     continue
 
@@ -405,17 +617,19 @@ def main():
                         "score": score,
                         "links": sus_links
                     })
-
-                    # Se achou um match para esse URL, não precisa continuar varrendo tudo
+                    found_for_url = True
                     break
 
-            # Se já tem alerta, sai do loop de imagens para esse URL
-            if alerts and alerts[-1]["page"] == url:
+            if found_for_url:
                 break
 
     # salva em formato "seen" (novo)
     save_json(SEEN_FILE, {"seen": seen_list})
 
+    print("=== RESUMO DA EXECUÇÃO ===")
+    print(f"Analisadas: {analyzed}")
+    print(f"Ignoradas por seen: {skipped_seen}")
+    print(f"Ignoradas por whitelist: {skipped_whitelist}")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
     if alerts:
