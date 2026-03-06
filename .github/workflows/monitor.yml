@@ -39,10 +39,18 @@ jobs:
 
       - name: Salvar arquivos de estado
         run: |
-          git config user.name monitor-bot
-          git config user.email monitor-bot@users.noreply.github.com
+          git config user.name "monitor-bot"
+          git config user.email "monitor-bot@users.noreply.github.com"
+
           git add state/seen.json state/ref_cache.json
-          git diff --staged --quiet && exit 0
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma mudança nos arquivos de estado."
+            exit 0
+          fi
+
+          git fetch origin main
+          git rebase origin/main || (git rebase --abort && exit 1)
+
           git commit -m "Update state"
-          git pull --rebase origin main
-          git push origin main
+          git push origin HEAD:main
