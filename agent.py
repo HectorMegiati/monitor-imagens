@@ -26,14 +26,14 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # =========================
 # CONTROLES MANUAIS
 # =========================
-# Coloque True quando quiser testar envio de e-mail
-EMAIL_TESTE = True
+# Quando True, envia imediatamente um e-mail com o formato do relatório semanal
+EMAIL_TESTE = False
 
-# Coloque True uma única vez se quiser reconstruir o cache de imagens do site
-RESETAR_CACHE = True
+# Use True uma única vez se quiser reconstruir o cache de referências do site
+RESETAR_CACHE = False
 
-# Coloque True uma única vez se quiser reavaliar todos os links novamente
-RESETAR_LINKS_VISTOS = True
+# Use True uma única vez se quiser reavaliar todos os links novamente
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -127,16 +127,6 @@ def send_email(subject, body):
 
     server.quit()
     print("E-mail enviado.")
-
-def maybe_send_test_email():
-    if not EMAIL_TESTE:
-        return
-    body = (
-        "Teste de envio do agente de monitoramento.\n\n"
-        "Se você recebeu esta mensagem, o envio por e-mail está funcionando corretamente.\n"
-        "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py."
-    )
-    send_email("Email teste - Agente de Monitoramento", body)
 
 # =========================
 # WHITELIST
@@ -346,14 +336,17 @@ def extract_page_images(url):
 
     imgs = []
 
+    # og:image
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
         imgs.append(urljoin(url, og["content"]))
 
+    # twitter:image
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
         imgs.append(urljoin(url, tw["content"]))
 
+    # img tags
     for img in soup.find_all("img"):
         candidates = [
             img.get("src"),
@@ -368,6 +361,7 @@ def extract_page_images(url):
             if c:
                 imgs.append(urljoin(url, c))
 
+    # noscript
     for noscript in soup.find_all("noscript"):
         try:
             inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
@@ -386,6 +380,7 @@ def extract_page_images(url):
         except Exception:
             continue
 
+    # background-image inline
     for tag in soup.find_all(style=True):
         for bg in extract_background_image_urls(tag.get("style")):
             imgs.append(urljoin(url, bg))
@@ -458,6 +453,36 @@ def load_seen_state():
 def save_seen_state(state):
     save_json(SEEN_FILE, state)
 
+def maybe_send_test_weekly_report(state):
+    if not EMAIL_TESTE:
+        return
+
+    weekly = state["weekly"]
+    analyzed = weekly.get("analyzed", 0)
+    alerts = weekly.get("alerts", 0)
+    max_score_below = weekly.get("max_score_below_threshold", 0)
+
+    if alerts == 0:
+        body = (
+            "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
+            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
+            "com seus arquivos digitais neste período.\n\n"
+            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n\n"
+            "Este é um envio de teste para validar o formato do relatório semanal.\n"
+            "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
+        )
+    else:
+        body = (
+            "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
+            f"O agente avaliou {analyzed} links suspeitos neste período.\n"
+            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
+            f"O maior percentual abaixo do limiar observado foi de {max_score_below:.1f}%.\n\n"
+            "Este é um envio de teste para validar o formato do relatório semanal.\n"
+            "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
+        )
+
+    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes (TESTE)", body)
+
 def maybe_send_weekly_report(state):
     now = current_timestamp()
     weekly = state["weekly"]
@@ -504,8 +529,6 @@ def maybe_send_weekly_report(state):
 
 def main():
     print("=== MONITOR START ===")
-
-    maybe_send_test_email()
 
     feeds = load_lines(FEEDS_FILE)
     whitelist = load_lines(WHITELIST_FILE)
@@ -587,6 +610,8 @@ def main():
     state["weekly"]["analyzed"] += analyzed
     state["weekly"]["alerts"] += len(alerts)
     state["weekly"]["max_score_below_threshold"] = best_below_threshold
+
+    maybe_send_test_weekly_report(state)
 
     print(f"Links analisados nesta execução: {analyzed}")
     print(f"Maior score abaixo do limiar nesta execução/semana: {best_below_threshold:.1f}%")
