@@ -27,13 +27,13 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES MANUAIS
 # =========================
 # Quando True, envia imediatamente um e-mail com o formato do relatório semanal
-EMAIL_TESTE = False
+EMAIL_TESTE = True
 
 # Use True uma única vez se quiser reconstruir o cache de referências do site
 RESETAR_CACHE = False
 
 # Use True uma única vez se quiser reavaliar todos os links novamente
-RESETAR_LINKS_VISTOS = False
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
@@ -576,6 +576,10 @@ def main():
 
             for ref in refs:
                 score_hash = similarity_hash_percent(pil, ref)
+
+                # REGISTRA O MAIOR SCORE ENCONTRADO, MESMO QUE SEJA BAIXO
+                if score_hash > best_below_threshold:
+                    best_below_threshold = score_hash
 
                 if score_hash < 40:
                     continue
