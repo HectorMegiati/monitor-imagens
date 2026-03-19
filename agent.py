@@ -1,5 +1,5 @@
 import os, json, time, re, smtplib
-from urllib.parse import urlparse, urljoin, urlencode, urlunparse, parse_qsl
+from urllib.parse import urlparse, urljoin
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -15,20 +15,13 @@ import imagehash
 # CONFIGURAÇÕES
 # =========================
 
-ALERT_THRESHOLD_PERCENT = 75
+ALERT_THRESHOLD_PERCENT = 65
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 12
 CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
+WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60  # 7 dias
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
-
-# Buscas adicionais
-SEARCH_TERMS_FILE = "search_terms.txt"   # termos para web (DuckDuckGo/Bing)
-MARKET_TERMS_FILE = "market_terms.txt"   # termos para Mercado Livre + Shopee
-
-WEB_RESULTS_PER_TERM = 12
-MARKET_RESULTS_PER_TERM = 12
-MAX_TOTAL_URLS_PER_RUN = 250
 
 # =========================
 # PATHS
@@ -52,10 +45,7 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-USER_AGENT = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-}
+USER_AGENT = {"User-Agent": "Mozilla/5.0"}
 
 # =========================
 # UTILIDADES
@@ -86,55 +76,15 @@ def save_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
-def safe_domain(url):
-    try:
-        d = urlparse(url).netloc.lower()
-        return d[4:] if d.startswith("www.") else d
-    except:
-        return ""
-
-def normalize_url(u: str) -> str:
-    try:
-        p = urlparse(u.strip())
-        if not p.scheme or not p.netloc:
-            return u.strip()
-
-        fragment = ""
-        q = []
-        for k, v in parse_qsl(p.query, keep_blank_values=True):
-            lk = k.lower()
-            if lk.startswith("utm_"):
-                continue
-            if lk in {"gclid", "fbclid", "msclkid"}:
-                continue
-            q.append((k, v))
-        query = urlencode(q, doseq=True)
-
-        return urlunparse((p.scheme, p.netloc, p.path, p.params, query, fragment))
-    except:
-        return u.strip()
-
-def dedupe_limit(urls, limit):
-    out = []
-    s = set()
-    for u in urls:
-        u = normalize_url(u)
-        if not u:
-            continue
-        if u in s:
-            continue
-        s.add(u)
-        out.append(u)
-        if len(out) >= limit:
-            break
-    return out
+def current_timestamp():
+    return int(time.time())
 
 # =========================
 # EMAIL
 # =========================
 
 def send_email(subject, body):
-    print("Enviando e-mail de alerta...")
+    print(f"Enviando e-mail: {subject}")
 
     msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -157,6 +107,13 @@ def send_email(subject, body):
 # =========================
 # WHITELIST
 # =========================
+
+def safe_domain(url):
+    try:
+        d = urlparse(url).netloc.lower()
+        return d[4:] if d.startswith("www.") else d
+    except:
+        return ""
 
 def is_whitelisted(url, entries):
     domain = safe_domain(url)
@@ -349,8 +306,7 @@ def extract_page_images(url):
         if len(imgs) >= MAX_IMAGES_PER_SUSPECT_PAGE:
             break
 
-    imgs = dedupe_limit(imgs, MAX_IMAGES_PER_SUSPECT_PAGE)
-    return imgs, r.text
+    return list(dict.fromkeys(imgs)), r.text
 
 # =========================
 # LINKS SUSPEITOS
@@ -384,131 +340,68 @@ def read_rss(feeds):
     return urls
 
 # =========================
-# BUSCA WEB: DuckDuckGo + Bing
+# ESTADO SEMANAL
 # =========================
 
-def search_duckduckgo(term, max_results=WEB_RESULTS_PER_TERM):
-    urls = []
-    q = term.strip().replace(" ", "+")
+def load_seen_state():
+    data = load_json(SEEN_FILE, {})
 
-    candidates = [
-        f"https://duckduckgo.com/html/?q={q}",
-        f"https://html.duckduckgo.com/html/?q={q}",
-    ]
+    # compatibilidade com versões antigas
+    seen_list = data.get("seen")
+    if seen_list is None:
+        seen_list = data.get("seen_urls", [])
 
-    for url in candidates:
-        try:
-            r = requests.get(url, headers=USER_AGENT, timeout=20)
-            soup = BeautifulSoup(r.text, "html.parser")
+    weekly = data.get("weekly")
+    if weekly is None:
+        weekly = {
+            "start": current_timestamp(),
+            "analyzed": 0,
+            "alerts": 0
+        }
 
-            for a in soup.select("a.result__a"):
-                href = a.get("href")
-                if href and href.startswith("http"):
-                    urls.append(href)
+    return {
+        "seen": seen_list,
+        "weekly": weekly
+    }
 
-            if not urls:
-                for a in soup.find_all("a", href=True):
-                    href = a.get("href")
-                    if not href:
-                        continue
-                    if href.startswith("http") and "duckduckgo.com" not in href:
-                        urls.append(href)
+def save_seen_state(state):
+    save_json(SEEN_FILE, state)
 
-            urls = dedupe_limit(urls, max_results)
+def maybe_send_weekly_report(state):
+    now = current_timestamp()
+    weekly = state["weekly"]
 
-            if urls:
-                break
+    if now - weekly["start"] < WEEKLY_REPORT_SECONDS:
+        return state
 
-        except Exception:
-            continue
+    analyzed = weekly.get("analyzed", 0)
+    alerts = weekly.get("alerts", 0)
 
-    return dedupe_limit(urls, max_results)
+    if alerts == 0:
+        body = (
+            "Relatório Semanal do Agente de Monitoramento\n\n"
+            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
+            "com seus arquivos digitais nesta semana.\n\n"
+            "Isso pode significar que:\n"
+            "- não houve aparição pública de cópias não autorizadas;\n"
+            "- ou o volume de links recebidos para análise ainda está baixo.\n"
+        )
+    else:
+        body = (
+            "Relatório Semanal do Agente de Monitoramento\n\n"
+            f"O agente avaliou {analyzed} links suspeitos nesta semana.\n"
+            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
+        )
 
-def search_bing(term, max_results=WEB_RESULTS_PER_TERM):
-    urls = []
-    q = term.strip()
-    url = "https://www.bing.com/search?" + urlencode({"q": q, "setlang": "pt-BR"})
+    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
 
-    try:
-        r = requests.get(url, headers=USER_AGENT, timeout=20)
-        soup = BeautifulSoup(r.text, "html.parser")
+    state["weekly"] = {
+        "start": now,
+        "analyzed": 0,
+        "alerts": 0
+    }
 
-        for a in soup.select("li.b_algo h2 a"):
-            href = a.get("href")
-            if href and href.startswith("http"):
-                urls.append(href)
-
-        if not urls:
-            for a in soup.find_all("a", href=True):
-                href = a.get("href")
-                if not href:
-                    continue
-                if href.startswith("http") and "bing.com" not in href:
-                    urls.append(href)
-
-    except Exception:
-        pass
-
-    return dedupe_limit(urls, max_results)
-
-# =========================
-# BUSCA MARKETPLACES
-# =========================
-
-def search_mercadolivre(term, max_results=MARKET_RESULTS_PER_TERM):
-    urls = []
-    query = term.strip()
-    url = "https://lista.mercadolivre.com.br/" + query.replace(" ", "-")
-
-    try:
-        r = requests.get(url, headers=USER_AGENT, timeout=20)
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-
-            if "mercadolivre.com.br" not in href:
-                continue
-
-            if any(x in href for x in ["/MLB-", "/p/", "/itm", "/produto"]):
-                urls.append(href)
-
-        if not urls:
-            for a in soup.find_all("a", href=True):
-                href = a["href"]
-                if "mercadolivre.com.br" in href and "/MLB-" in href:
-                    urls.append(href)
-
-    except Exception:
-        pass
-
-    return dedupe_limit(urls, max_results)
-
-def search_shopee(term, max_results=MARKET_RESULTS_PER_TERM):
-    urls = []
-    query = term.strip()
-    url = "https://shopee.com.br/search?" + urlencode({"keyword": query})
-
-    try:
-        r = requests.get(url, headers=USER_AGENT, timeout=20)
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-
-            if "/product/" in href:
-                if href.startswith("/"):
-                    href = "https://shopee.com.br" + href
-                urls.append(href)
-
-        if not urls:
-            matches = re.findall(r'https://shopee\.com\.br[^\s"\']+', r.text)
-            urls.extend(matches)
-
-    except Exception:
-        pass
-
-    return dedupe_limit(urls, max_results)
+    return state
 
 # =========================
 # MAIN
@@ -520,71 +413,36 @@ def main():
     feeds = load_lines(FEEDS_FILE)
     whitelist = load_lines(WHITELIST_FILE)
 
-    seen_obj = load_json(SEEN_FILE, {"seen": []})
-    seen_list = seen_obj.get("seen")
-    if seen_list is None:
-        seen_list = seen_obj.get("seen_urls", [])
-        seen_obj = {"seen": seen_list}
+    state = load_seen_state()
+    seen_list = state["seen"]
 
     print(f"Feeds carregados: {len(feeds)}")
     print(f"Whitelist entries: {len(whitelist)}")
     print(f"Links já vistos (cache): {len(seen_list)}")
 
     refs = load_cache()
-
-    # 1) RSS
-    urls_rss = read_rss(feeds)
-
-    # 2) Busca web (desativada temporariamente)
-    urls_duck, urls_bing = [], []
-    print("Busca WEB direta desativada temporariamente.")
-
-    # 3) Marketplaces (desativados temporariamente)
-    urls_ml, urls_shopee = [], []
-    print("Busca MARKET direta desativada temporariamente.")
-   
-    # Junta tudo
-    urls_all = []
-    urls_all += urls_rss
-    urls_all += urls_duck
-    urls_all += urls_bing
-    urls_all += urls_ml
-    urls_all += urls_shopee
-
-    urls_all = dedupe_limit(urls_all, MAX_TOTAL_URLS_PER_RUN)
-
-    print("=== FONTES DE URLs ===")
-    print(f"RSS: {len(dedupe_limit(urls_rss, 9999))}")
-    print(f"DuckDuckGo: {len(dedupe_limit(urls_duck, 9999))}")
-    print(f"Bing: {len(dedupe_limit(urls_bing, 9999))}")
-    print(f"Mercado Livre: {len(dedupe_limit(urls_ml, 9999))}")
-    print(f"Shopee: {len(dedupe_limit(urls_shopee, 9999))}")
-    print(f"TOTAL (dedupe + limite): {len(urls_all)}")
+    urls = read_rss(feeds)
 
     alerts = []
     analyzed = 0
-    skipped_whitelist = 0
-    skipped_seen = 0
 
-    for url in urls_all:
+    for url in urls:
         if url in seen_list:
-            skipped_seen += 1
             continue
 
         seen_list.append(url)
 
         if is_whitelisted(url, whitelist):
-            skipped_whitelist += 1
             continue
-
-        analyzed += 1
 
         try:
             images, html = extract_page_images(url)
         except Exception:
             continue
 
+        analyzed += 1
         sus_links = suspicious_links(html)
+
         found_for_url = False
 
         for img in images:
@@ -597,6 +455,7 @@ def main():
 
             for ref in refs:
                 score_hash = similarity_hash_percent(pil, ref)
+
                 if score_hash < 40:
                     continue
 
@@ -624,14 +483,14 @@ def main():
             if found_for_url:
                 break
 
-    save_json(SEEN_FILE, {"seen": seen_list})
+    # atualiza estatísticas semanais
+    state["weekly"]["analyzed"] += analyzed
+    state["weekly"]["alerts"] += len(alerts)
 
-    print("=== RESUMO DA EXECUÇÃO ===")
-    print(f"Analisadas: {analyzed}")
-    print(f"Ignoradas por seen: {skipped_seen}")
-    print(f"Ignoradas por whitelist: {skipped_whitelist}")
+    print(f"Links analisados nesta execução: {analyzed}")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
+    # alerta imediato se houver suspeita
     if alerts:
         body = "Alertas de Possíveis Fraudes\n\n"
 
@@ -640,7 +499,7 @@ def main():
             body += f"Produto parecido: {a['product']}\n"
             body += f"Seu produto: {a['product_url']}\n"
             body += f"Imagem suspeita: {a['image']}\n"
-            body += f"Score: {a['score']:.1f}%\n"
+            body += f"Score de similaridade: {a['score']:.1f}%\n"
 
             if a["links"]:
                 body += "Links suspeitos encontrados:\n"
@@ -650,6 +509,11 @@ def main():
             body += "\n"
 
         send_email("Alertas de Possíveis Fraudes", body)
+
+    # relatório semanal
+    state = maybe_send_weekly_report(state)
+
+    save_seen_state(state)
 
 if __name__ == "__main__":
     main()
