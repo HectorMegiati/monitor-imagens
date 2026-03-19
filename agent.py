@@ -26,14 +26,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # =========================
 # CONTROLES MANUAIS
 # =========================
-# Quando True, envia imediatamente um e-mail com o formato do relatório semanal
-EMAIL_TESTE = True
-
-# Use True uma única vez se quiser reconstruir o cache de referências do site
+EMAIL_TESTE = False
 RESETAR_CACHE = False
-
-# Use True uma única vez se quiser reavaliar todos os links novamente
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -118,14 +113,9 @@ def send_email(subject, body):
     server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
     server.starttls()
     server.login(EMAIL_USER, EMAIL_PASSWORD)
-
-    server.sendmail(
-        EMAIL_USER,
-        [EMAIL_DESTINATION],
-        msg.as_string()
-    )
-
+    server.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
     server.quit()
+
     print("E-mail enviado.")
 
 # =========================
@@ -196,8 +186,17 @@ def orb_match(gray, ref_des):
     return len(good)
 
 # =========================
-# HASH SCORE
+# HASH SCORE CORRIGIDO
 # =========================
+
+def hash_distance_to_percent(distance):
+    """
+    Cada hash tem distância de 0 a 64.
+    0 = 100%
+    64 = 0%
+    """
+    distance = max(0, min(64, distance))
+    return (1 - (distance / 64.0)) * 100
 
 def similarity_hash_percent(pil, ref):
     ph, dh, wh = hash_triplet(pil)
@@ -206,8 +205,11 @@ def similarity_hash_percent(pil, ref):
     d2 = dh - imagehash.hex_to_hash(ref["dhash"])
     d3 = wh - imagehash.hex_to_hash(ref["whash"])
 
-    score = (1 - ((d1 + d2 + d3) / 30)) * 100
-    return max(0, score)
+    p1 = hash_distance_to_percent(d1)
+    p2 = hash_distance_to_percent(d2)
+    p3 = hash_distance_to_percent(d3)
+
+    return (p1 + p2 + p3) / 3.0
 
 # =========================
 # WOO PRODUCTS
@@ -250,7 +252,6 @@ def build_refs():
     for p in products:
         name = p.get("name", "(sem nome)")
         link = p.get("permalink", "")
-
         images = (p.get("images", []) or [])[:IMAGES_PER_PRODUCT]
 
         for img in images:
@@ -274,7 +275,6 @@ def build_refs():
                     "whash": str(wh),
                     "orb": des.tolist() if des is not None else None
                 })
-
             except Exception:
                 continue
 
@@ -295,10 +295,7 @@ def load_cache():
     if time.time() - cache.get("last", 0) > CACHE_REFRESH_SECONDS or not cache.get("refs"):
         print("Atualizando cache de imagens do site...")
         refs = build_refs()
-        cache = {
-            "last": time.time(),
-            "refs": refs
-        }
+        cache = {"last": time.time(), "refs": refs}
         save_json(CACHE_FILE, cache)
     else:
         refs = cache["refs"]
@@ -336,17 +333,14 @@ def extract_page_images(url):
 
     imgs = []
 
-    # og:image
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
         imgs.append(urljoin(url, og["content"]))
 
-    # twitter:image
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
         imgs.append(urljoin(url, tw["content"]))
 
-    # img tags
     for img in soup.find_all("img"):
         candidates = [
             img.get("src"),
@@ -356,12 +350,10 @@ def extract_page_images(url):
             extract_first_from_srcset(img.get("srcset")),
             extract_first_from_srcset(img.get("data-srcset"))
         ]
-
         for c in candidates:
             if c:
                 imgs.append(urljoin(url, c))
 
-    # noscript
     for noscript in soup.find_all("noscript"):
         try:
             inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
@@ -380,7 +372,6 @@ def extract_page_images(url):
         except Exception:
             continue
 
-    # background-image inline
     for tag in soup.find_all(style=True):
         for bg in extract_background_image_urls(tag.get("style")):
             imgs.append(urljoin(url, bg))
@@ -396,12 +387,10 @@ def extract_page_images(url):
 
 def suspicious_links(text):
     links = set()
-
     for m in re.findall(r"https?://\S+", text):
         low = m.lower()
         if any(x in low for x in ["mega.nz", "drive.google.com", "telegram", "t.me"]):
             links.add(m)
-
     return list(links)
 
 # =========================
@@ -410,7 +399,6 @@ def suspicious_links(text):
 
 def read_rss(feeds):
     urls = []
-
     for f in feeds:
         d = feedparser.parse(f)
         for e in d.entries:
@@ -445,10 +433,7 @@ def load_seen_state():
             "max_score_below_threshold": 0
         }
 
-    return {
-        "seen": seen_list,
-        "weekly": weekly
-    }
+    return {"seen": seen_list, "weekly": weekly}
 
 def save_seen_state(state):
     save_json(SEEN_FILE, state)
@@ -563,7 +548,6 @@ def main():
 
         analyzed += 1
         sus_links = suspicious_links(html)
-
         found_for_url = False
 
         for img in images:
@@ -577,7 +561,6 @@ def main():
             for ref in refs:
                 score_hash = similarity_hash_percent(pil, ref)
 
-                # REGISTRA O MAIOR SCORE ENCONTRADO, MESMO QUE SEJA BAIXO
                 if score_hash > best_below_threshold:
                     best_below_threshold = score_hash
 
@@ -623,7 +606,6 @@ def main():
 
     if alerts:
         body = "Alertas de Possíveis Fraudes\n\n"
-
         for a in alerts:
             body += f"Página suspeita: {a['page']}\n"
             body += f"Produto parecido: {a['product']}\n"
