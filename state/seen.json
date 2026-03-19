@@ -53,6 +53,8 @@
     "start": 1773953276,
     "analyzed": 48,
     "alerts": 0,
-    "max_score_below_threshold": 0
+    "max_score_below_threshold": 0,
+    "max": 0.0,
+    "top": []
   }
 }
