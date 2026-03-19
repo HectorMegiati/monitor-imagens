@@ -158,7 +158,7 @@ def download(url):
     r.raise_for_status()
     return r.content
 
-def pil(b):
+def pil_from_bytes(b):
     return Image.open(BytesIO(b)).convert("RGB")
 
 def gray(p):
@@ -177,9 +177,11 @@ def hash_score(p, ref):
     d2 = dh - imagehash.hex_to_hash(ref["dhash"])
     d3 = wh - imagehash.hex_to_hash(ref["whash"])
 
-    return (hash_distance_to_percent(d1) +
-            hash_distance_to_percent(d2) +
-            hash_distance_to_percent(d3)) / 3.0
+    return (
+        hash_distance_to_percent(d1) +
+        hash_distance_to_percent(d2) +
+        hash_distance_to_percent(d3)
+    ) / 3.0
 
 def orb_compute(gray_img):
     orb = cv2.ORB_create(1200)
@@ -238,13 +240,17 @@ def wc_products():
 
 def build_refs():
     refs = []
-    for p in wc_products():
+    products = wc_products()
+
+    for p in products:
         imgs = (p.get("images") or [])[:IMAGES_PER_PRODUCT]
         for i in imgs:
             try:
-                pimg = pil(download(i["src"]))
+                img_bytes = download(i["src"])
+                pimg = pil_from_bytes(img_bytes)
                 ph, dh, wh = hash_triplet(pimg)
                 des = orb_compute(gray(pimg))
+
                 refs.append({
                     "product": p.get("name", "(sem nome)"),
                     "url": p.get("permalink", ""),
@@ -253,8 +259,10 @@ def build_refs():
                     "whash": str(wh),
                     "orb": des.tolist() if des is not None else None
                 })
-            except:
+            except Exception:
                 pass
+
+    print(f"Referências criadas: {len(refs)}")
     return refs
 
 def load_cache():
@@ -267,23 +275,87 @@ def load_cache():
         refs = build_refs()
         cache = {"last": now(), "refs": refs}
         save_json(CACHE_FILE, cache)
+    else:
+        refs = cache["refs"]
+        print(f"Cache carregado: {len(refs)} referências")
 
-    return cache["refs"]
+    return refs
 
 # =========================
-# SCRAPE
+# EXTRAÇÃO ROBUSTA DE IMAGENS
 # =========================
+
+def extract_first_from_srcset(srcset_value):
+    if not srcset_value:
+        return None
+    parts = [p.strip() for p in srcset_value.split(",") if p.strip()]
+    if not parts:
+        return None
+    first = parts[0].split(" ")[0].strip()
+    return first if first else None
+
+def extract_background_image_urls(style_value):
+    if not style_value:
+        return []
+    matches = re.findall(r'background-image\s*:\s*url\((.*?)\)', style_value, flags=re.IGNORECASE)
+    urls = []
+    for m in matches:
+        u = m.strip().strip('"').strip("'")
+        if u:
+            urls.append(u)
+    return urls
 
 def extract_images(url):
     html = requests.get(url, headers=USER_AGENT, timeout=20).text
     soup = BeautifulSoup(html, "html.parser")
 
     imgs = []
-    for img in soup.find_all("img"):
-        if img.get("src"):
-            imgs.append(urljoin(url, img["src"]))
 
-    return unique(imgs)[:MAX_IMAGES_PER_SUSPECT_PAGE], html
+    og = soup.find("meta", property="og:image")
+    if og and og.get("content"):
+        imgs.append(urljoin(url, og["content"]))
+
+    tw = soup.find("meta", attrs={"name": "twitter:image"})
+    if tw and tw.get("content"):
+        imgs.append(urljoin(url, tw["content"]))
+
+    for img in soup.find_all("img"):
+        candidates = [
+            img.get("src"),
+            img.get("data-src"),
+            img.get("data-lazy-src"),
+            img.get("data-original"),
+            extract_first_from_srcset(img.get("srcset")),
+            extract_first_from_srcset(img.get("data-srcset"))
+        ]
+        for c in candidates:
+            if c:
+                imgs.append(urljoin(url, c))
+
+    for noscript in soup.find_all("noscript"):
+        try:
+            inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
+            for img in inner.find_all("img"):
+                candidates = [
+                    img.get("src"),
+                    img.get("data-src"),
+                    img.get("data-lazy-src"),
+                    img.get("data-original"),
+                    extract_first_from_srcset(img.get("srcset")),
+                    extract_first_from_srcset(img.get("data-srcset"))
+                ]
+                for c in candidates:
+                    if c:
+                        imgs.append(urljoin(url, c))
+        except Exception:
+            pass
+
+    for tag in soup.find_all(style=True):
+        for bg in extract_background_image_urls(tag.get("style")):
+            imgs.append(urljoin(url, bg))
+
+    imgs = unique(imgs)[:MAX_IMAGES_PER_SUSPECT_PAGE]
+    return imgs, html
 
 def suspicious(text):
     return [
@@ -302,7 +374,9 @@ def read_rss(feeds):
         for e in d.entries:
             if hasattr(e, "link"):
                 urls.append(e.link)
-    return list(set(urls))
+    urls = list(set(urls))
+    print(f"Links coletados do RSS: {len(urls)}")
+    return urls
 
 # =========================
 # STATE
@@ -314,19 +388,78 @@ def load_state():
 
     state = load_json(SEEN_FILE, {})
 
-    seen = state.get("seen") or state.get("seen_urls") or []
-    weekly = state.get("weekly") or build_default_weekly()
+    seen = state.get("seen")
+    if seen is None:
+        seen = state.get("seen_urls", [])
+
+    weekly = state.get("weekly")
+    if weekly is None:
+        weekly = build_default_weekly()
 
     weekly.setdefault("start", now())
     weekly.setdefault("analyzed", 0)
     weekly.setdefault("alerts", 0)
-    weekly.setdefault("max", 0.0)
-    weekly.setdefault("top", [])
+    weekly.setdefault("max", weekly.get("max_score_below_threshold", 0.0))
+    weekly.setdefault("top", weekly.get("top_scores_below_threshold", []))
 
     return {"seen": seen, "weekly": weekly}
 
 def save_state(state):
     save_json(SEEN_FILE, state)
+
+# =========================
+# REPORTS
+# =========================
+
+def build_report_body(title, analyzed, alerts, best, top):
+    if alerts == 0:
+        return (
+            f"{title}\n\n"
+            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
+            f"com seus arquivos digitais neste período.\n\n"
+            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {best:.1f}%.\n"
+            f"Top 3 percentuais encontrados: {format_scores(top)}\n"
+        )
+    else:
+        return (
+            f"{title}\n\n"
+            f"O agente avaliou {analyzed} links suspeitos neste período.\n"
+            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
+            f"O maior percentual observado foi de {best:.1f}%.\n"
+            f"Top 3 percentuais encontrados: {format_scores(top)}\n"
+        )
+
+def maybe_send_test_report(state):
+    if not EMAIL_TESTE:
+        return
+
+    weekly = state["weekly"]
+    body = build_report_body(
+        "Relatório Semanal do Agente de Monitoramento (TESTE)",
+        weekly["analyzed"],
+        weekly["alerts"],
+        weekly["max"],
+        weekly["top"]
+    ) + "\nEste é um envio de teste.\nDepois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
+
+    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes (TESTE)", body)
+
+def maybe_send_weekly_report(state):
+    if now() - state["weekly"]["start"] < WEEKLY_REPORT_SECONDS:
+        return state
+
+    weekly = state["weekly"]
+    body = build_report_body(
+        "Relatório Semanal do Agente de Monitoramento",
+        weekly["analyzed"],
+        weekly["alerts"],
+        weekly["max"],
+        weekly["top"]
+    )
+
+    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
+    state["weekly"] = build_default_weekly()
+    return state
 
 # =========================
 # MAIN
@@ -339,6 +472,10 @@ def main():
     whitelist = load_lines(WHITELIST_FILE)
     state = load_state()
 
+    print(f"Feeds carregados: {len(feeds)}")
+    print(f"Whitelist entries: {len(whitelist)}")
+    print(f"Links já vistos (cache): {len(state['seen'])}")
+
     refs = load_cache()
     urls = read_rss(feeds)
 
@@ -346,6 +483,9 @@ def main():
     top = state["weekly"]["top"]
 
     analyzed = 0
+    pages_with_images = 0
+    image_comparisons = 0
+    alerts = []
 
     for url in urls:
         if url in state["seen"]:
@@ -358,21 +498,26 @@ def main():
 
         try:
             imgs, html = extract_images(url)
-        except:
+        except Exception:
             continue
 
         analyzed += 1
 
+        if imgs:
+            pages_with_images += 1
+
         for im in imgs:
             try:
-                pimg = pil(download(im))
+                img_bytes = download(im)
+                pimg = pil_from_bytes(img_bytes)
                 g = gray(pimg)
-            except:
+            except Exception:
                 continue
 
             for r in refs:
-                h = hash_score(pimg, r)
+                image_comparisons += 1
 
+                h = hash_score(pimg, r)
                 best = max(best, h)
                 top = update_top(top, h)
 
@@ -380,27 +525,53 @@ def main():
                     continue
 
                 orb_n = orb_matches(g, r["orb"])
-                score = (h * 0.6) + (min(100, (orb_n / 18) * 100) * 0.4)
+                orb_score = min(100, (orb_n / 18) * 100)
+                score = (h * 0.6) + (orb_score * 0.4)
 
                 best = max(best, score)
                 top = update_top(top, score)
 
                 if score >= ALERT_THRESHOLD_PERCENT:
-                    send_email("Possível fraude", f"{url}\nScore: {score:.1f}%")
+                    alerts.append({
+                        "page": url,
+                        "product": r["product"],
+                        "product_url": r["url"],
+                        "image": im,
+                        "score": score,
+                        "links": suspicious(html)
+                    })
 
     state["weekly"]["analyzed"] += analyzed
+    state["weekly"]["alerts"] += len(alerts)
     state["weekly"]["max"] = best
     state["weekly"]["top"] = top
 
-    print("Maior score:", best)
-    print("Top:", format_scores(top))
+    print(f"Páginas analisadas: {analyzed}")
+    print(f"Páginas com imagens extraídas: {pages_with_images}")
+    print(f"Comparações de imagem realizadas: {image_comparisons}")
+    print(f"Maior score nesta execução/semana: {best:.1f}%")
+    print(f"Top 3 scores da semana: {format_scores(top)}")
+    print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
-    if EMAIL_TESTE:
-        send_email(
-            "Relatório TESTE",
-            f"Analisados: {analyzed}\nMaior score: {best:.1f}%\nTop: {format_scores(top)}"
-        )
+    maybe_send_test_report(state)
 
+    if alerts:
+        body = "Alertas de Possíveis Fraudes\n\n"
+        for a in alerts:
+            body += f"Página suspeita: {a['page']}\n"
+            body += f"Produto parecido: {a['product']}\n"
+            body += f"Seu produto: {a['product_url']}\n"
+            body += f"Imagem suspeita: {a['image']}\n"
+            body += f"Score de similaridade: {a['score']:.1f}%\n"
+            if a["links"]:
+                body += "Links suspeitos encontrados:\n"
+                for l in a["links"]:
+                    body += f"- {l}\n"
+            body += "\n"
+
+        send_email("Alertas de Possíveis Fraudes", body)
+
+    state = maybe_send_weekly_report(state)
     save_state(state)
 
 if __name__ == "__main__":
