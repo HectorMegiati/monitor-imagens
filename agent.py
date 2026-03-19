@@ -27,7 +27,7 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES MANUAIS
 # =========================
 # Coloque True quando quiser testar envio de e-mail
-EMAIL_TESTE = True
+EMAIL_TESTE = False
 
 # Coloque True uma única vez se quiser reconstruir o cache de imagens do site
 RESETAR_CACHE = True
