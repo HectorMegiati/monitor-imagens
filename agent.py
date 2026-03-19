@@ -17,7 +17,7 @@ import imagehash
 
 ALERT_THRESHOLD_PERCENT = 65
 IMAGES_PER_PRODUCT = 3
-MAX_IMAGES_PER_SUSPECT_PAGE = 12
+MAX_IMAGES_PER_SUSPECT_PAGE = 20
 CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
 WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60  # 7 dias
 
@@ -78,6 +78,18 @@ def save_json(path, obj):
 
 def current_timestamp():
     return int(time.time())
+
+def unique_keep_order(items):
+    seen = set()
+    out = []
+    for item in items:
+        if not item:
+            continue
+        if item in seen:
+            continue
+        seen.add(item)
+        out.append(item)
+    return out
 
 # =========================
 # EMAIL
@@ -279,8 +291,28 @@ def load_cache():
     return refs
 
 # =========================
-# EXTRAIR IMAGENS DA PÁGINA
+# EXTRAÇÃO MELHORADA DE IMAGENS
 # =========================
+
+def extract_first_from_srcset(srcset_value):
+    if not srcset_value:
+        return None
+    parts = [p.strip() for p in srcset_value.split(",") if p.strip()]
+    if not parts:
+        return None
+    first = parts[0].split(" ")[0].strip()
+    return first if first else None
+
+def extract_background_image_urls(style_value):
+    if not style_value:
+        return []
+    matches = re.findall(r'background-image\s*:\s*url\((.*?)\)', style_value, flags=re.IGNORECASE)
+    urls = []
+    for m in matches:
+        u = m.strip().strip('"').strip("'")
+        if u:
+            urls.append(u)
+    return urls
 
 def extract_page_images(url):
     r = requests.get(url, headers=USER_AGENT, timeout=20)
@@ -288,25 +320,59 @@ def extract_page_images(url):
 
     imgs = []
 
+    # og:image
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
         imgs.append(urljoin(url, og["content"]))
 
+    # twitter:image
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
         imgs.append(urljoin(url, tw["content"]))
 
+    # imagens em <img>
     for img in soup.find_all("img"):
-        src = img.get("src") or img.get("data-src") or img.get("data-original")
-        if not src:
+        candidates = [
+            img.get("src"),
+            img.get("data-src"),
+            img.get("data-lazy-src"),
+            img.get("data-original"),
+            extract_first_from_srcset(img.get("srcset")),
+            extract_first_from_srcset(img.get("data-srcset"))
+        ]
+
+        for c in candidates:
+            if c:
+                imgs.append(urljoin(url, c))
+
+    # imagens em <noscript> (muito comum em lazy load)
+    for noscript in soup.find_all("noscript"):
+        try:
+            inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
+            for img in inner.find_all("img"):
+                candidates = [
+                    img.get("src"),
+                    img.get("data-src"),
+                    img.get("data-lazy-src"),
+                    img.get("data-original"),
+                    extract_first_from_srcset(img.get("srcset")),
+                    extract_first_from_srcset(img.get("data-srcset"))
+                ]
+                for c in candidates:
+                    if c:
+                        imgs.append(urljoin(url, c))
+        except Exception:
             continue
 
-        imgs.append(urljoin(url, src))
+    # imagens em style="background-image:url(...)"
+    for tag in soup.find_all(style=True):
+        for bg in extract_background_image_urls(tag.get("style")):
+            imgs.append(urljoin(url, bg))
 
-        if len(imgs) >= MAX_IMAGES_PER_SUSPECT_PAGE:
-            break
+    imgs = unique_keep_order(imgs)
+    imgs = imgs[:MAX_IMAGES_PER_SUSPECT_PAGE]
 
-    return list(dict.fromkeys(imgs)), r.text
+    return imgs, r.text
 
 # =========================
 # LINKS SUSPEITOS
@@ -346,7 +412,6 @@ def read_rss(feeds):
 def load_seen_state():
     data = load_json(SEEN_FILE, {})
 
-    # compatibilidade com versões antigas
     seen_list = data.get("seen")
     if seen_list is None:
         seen_list = data.get("seen_urls", [])
@@ -483,14 +548,12 @@ def main():
             if found_for_url:
                 break
 
-    # atualiza estatísticas semanais
     state["weekly"]["analyzed"] += analyzed
     state["weekly"]["alerts"] += len(alerts)
 
     print(f"Links analisados nesta execução: {analyzed}")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
-    # alerta imediato se houver suspeita
     if alerts:
         body = "Alertas de Possíveis Fraudes\n\n"
 
@@ -510,9 +573,7 @@ def main():
 
         send_email("Alertas de Possíveis Fraudes", body)
 
-    # relatório semanal
     state = maybe_send_weekly_report(state)
-
     save_seen_state(state)
 
 if __name__ == "__main__":
