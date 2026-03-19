@@ -16,7 +16,7 @@ import imagehash
 # =========================
 
 ALERT_THRESHOLD_PERCENT = 60
-INITIAL_HASH_FILTER = 25   # antes era 40
+INITIAL_HASH_FILTER = 25
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 20
 CACHE_REFRESH_SECONDS = 48 * 60 * 60
@@ -25,8 +25,9 @@ WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 # =========================
-# CONTROLES MANUAIS
+# CONTROLES
 # =========================
+
 EMAIL_TESTE = True
 RESETAR_CACHE = False
 RESETAR_LINKS_VISTOS = True
@@ -41,7 +42,7 @@ SEEN_FILE = "state/seen.json"
 CACHE_FILE = "state/ref_cache.json"
 
 # =========================
-# VARIÁVEIS DE AMBIENTE
+# ENV
 # =========================
 
 WC_BASE_URL = os.getenv("WC_BASE_URL", "").rstrip("/")
@@ -56,170 +57,99 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 USER_AGENT = {"User-Agent": "Mozilla/5.0"}
 
 # =========================
-# UTILIDADES
+# UTIL
 # =========================
 
 def load_lines(path):
     if not os.path.exists(path):
         return []
     with open(path, "r", encoding="utf-8") as f:
-        lines = []
-        for l in f.readlines():
-            l = l.strip()
-            if not l:
-                continue
-            if l.startswith("#"):
-                continue
-            lines.append(l)
-        return lines
+        return [l.strip() for l in f if l.strip() and not l.startswith("#")]
 
 def load_json(path, default):
     if not os.path.exists(path):
         return default
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return json.load(open(path, "r", encoding="utf-8"))
 
 def save_json(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
+    json.dump(obj, open(path, "w", encoding="utf-8"), indent=2)
 
-def current_timestamp():
-    return int(time.time())
-
-def unique_keep_order(items):
-    seen = set()
-    out = []
-    for item in items:
-        if not item:
-            continue
-        if item in seen:
-            continue
-        seen.add(item)
-        out.append(item)
+def unique(items):
+    seen, out = set(), []
+    for i in items:
+        if i and i not in seen:
+            seen.add(i)
+            out.append(i)
     return out
 
-def update_top_scores(existing_scores, new_score, limit=3):
-    scores = list(existing_scores or [])
-    scores.append(float(new_score))
-    scores = sorted(scores, reverse=True)
-    return scores[:limit]
+def now():
+    return int(time.time())
 
-def format_top_scores(scores):
-    if not scores:
-        return "Nenhum score relevante foi encontrado."
-    return ", ".join([f"{s:.1f}%" for s in scores])
+def update_top(scores, new, limit=3):
+    scores = list(scores or [])
+    scores.append(float(new))
+    return sorted(scores, reverse=True)[:limit]
+
+def format_scores(scores):
+    return ", ".join([f"{s:.1f}%" for s in scores]) if scores else "Nenhum"
 
 # =========================
 # EMAIL
 # =========================
 
 def send_email(subject, body):
-    print(f"Enviando e-mail: {subject}")
-
     msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = EMAIL_USER
     msg["To"] = EMAIL_DESTINATION
 
-    server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
-    server.starttls()
-    server.login(EMAIL_USER, EMAIL_PASSWORD)
-    server.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
-    server.quit()
-
-    print("E-mail enviado.")
-
-# =========================
-# WHITELIST
-# =========================
-
-def safe_domain(url):
-    try:
-        d = urlparse(url).netloc.lower()
-        return d[4:] if d.startswith("www.") else d
-    except:
-        return ""
-
-def is_whitelisted(url, entries):
-    domain = safe_domain(url)
-    for w in entries:
-        if "/" in w:
-            if w in url:
-                return True
-        else:
-            if domain == w or domain.endswith("." + w):
-                return True
-    return False
+    s = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+    s.starttls()
+    s.login(EMAIL_USER, EMAIL_PASSWORD)
+    s.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
+    s.quit()
 
 # =========================
 # IMAGEM
 # =========================
 
-def download_bytes(url):
-    r = requests.get(url, headers=USER_AGENT, timeout=20)
-    r.raise_for_status()
-    return r.content
+def download(url):
+    return requests.get(url, headers=USER_AGENT, timeout=20).content
 
-def bytes_to_pil(b):
+def pil(b):
     return Image.open(BytesIO(b)).convert("RGB")
 
-def pil_to_gray_np(pil):
-    arr = np.array(pil)
-    return cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+def gray(p):
+    return cv2.cvtColor(np.array(p), cv2.COLOR_RGB2GRAY)
 
-def hash_triplet(pil):
-    return (
-        imagehash.phash(pil),
-        imagehash.dhash(pil),
-        imagehash.whash(pil)
-    )
+def hash_triplet(p):
+    return imagehash.phash(p), imagehash.dhash(p), imagehash.whash(p)
 
-# =========================
-# ORB
-# =========================
-
-def orb_compute(gray):
-    orb = cv2.ORB_create(nfeatures=1200)
-    kp, des = orb.detectAndCompute(gray, None)
-    return des
-
-def orb_match(gray, ref_des):
-    if ref_des is None:
-        return 0
-
-    des = orb_compute(gray)
-    if des is None:
-        return 0
-
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = bf.match(ref_des, des)
-    good = [m for m in matches if m.distance < 60]
-    return len(good)
-
-# =========================
-# HASH SCORE CORRIGIDO
-# =========================
-
-def hash_distance_to_percent(distance):
-    distance = max(0, min(64, distance))
-    return (1 - (distance / 64.0)) * 100
-
-def similarity_hash_percent(pil, ref):
-    ph, dh, wh = hash_triplet(pil)
-
+def hash_score(p, ref):
+    ph, dh, wh = hash_triplet(p)
     d1 = ph - imagehash.hex_to_hash(ref["phash"])
     d2 = dh - imagehash.hex_to_hash(ref["dhash"])
     d3 = wh - imagehash.hex_to_hash(ref["whash"])
 
-    p1 = hash_distance_to_percent(d1)
-    p2 = hash_distance_to_percent(d2)
-    p3 = hash_distance_to_percent(d3)
+    def conv(d): return (1 - (d / 64)) * 100
 
-    return (p1 + p2 + p3) / 3.0
+    return (conv(d1) + conv(d2) + conv(d3)) / 3
+
+def orb(gray_img, ref):
+    if not ref:
+        return 0
+    orb = cv2.ORB_create(1200)
+    kp, des = orb.detectAndCompute(gray_img, None)
+    if des is None:
+        return 0
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = bf.match(np.array(ref, dtype=np.uint8), des)
+    good = [m for m in matches if m.distance < 60]
+    return len(good)
 
 # =========================
-# WOO PRODUCTS
+# WOO
 # =========================
 
 def wc_products():
@@ -227,181 +157,81 @@ def wc_products():
     page = 1
 
     while True:
-        url = f"{WC_BASE_URL}/wp-json/wc/v3/products}"
-
-        # correção simples para evitar erro silencioso de formatação acidental
         url = f"{WC_BASE_URL}/wp-json/wc/v3/products"
 
-        params = {
+        r = requests.get(url, params={
             "consumer_key": WC_CONSUMER_KEY,
             "consumer_secret": WC_CONSUMER_SECRET,
             "per_page": 100,
             "page": page
-        }
+        }, timeout=20)
 
-        r = requests.get(url, params=params, headers=USER_AGENT, timeout=20)
         data = r.json()
-
         if not data:
             break
 
         products += data
         page += 1
 
-    print(f"Produtos encontrados no WooCommerce: {len(products)}")
+    print("Produtos:", len(products))
     return products
 
 # =========================
-# BUILD CACHE
+# CACHE
 # =========================
 
 def build_refs():
     refs = []
-    products = wc_products()
-
-    for p in products:
-        name = p.get("name", "(sem nome)")
-        link = p.get("permalink", "")
-        images = (p.get("images", []) or [])[:IMAGES_PER_PRODUCT]
-
-        for img in images:
+    for p in wc_products():
+        imgs = (p.get("images") or [])[:IMAGES_PER_PRODUCT]
+        for i in imgs:
             try:
-                url = img.get("src")
-                if not url:
-                    continue
-
-                b = download_bytes(url)
-                pil = bytes_to_pil(b)
-
-                ph, dh, wh = hash_triplet(pil)
-                gray = pil_to_gray_np(pil)
-                des = orb_compute(gray)
-
+                pimg = pil(download(i["src"]))
+                ph, dh, wh = hash_triplet(pimg)
                 refs.append({
-                    "product_name": name,
-                    "product_url": link,
+                    "product": p["name"],
+                    "url": p["permalink"],
                     "phash": str(ph),
                     "dhash": str(dh),
                     "whash": str(wh),
-                    "orb": des.tolist() if des is not None else None
+                    "orb": orb(gray(pimg), None)
                 })
-            except Exception:
-                continue
-
-    print(f"Referências de imagem criadas: {len(refs)}")
+            except:
+                pass
     return refs
-
-# =========================
-# LOAD CACHE
-# =========================
 
 def load_cache():
     if RESETAR_CACHE:
-        print("RESETAR_CACHE=True -> limpando cache de referências do site...")
         save_json(CACHE_FILE, {"last": 0, "refs": []})
 
     cache = load_json(CACHE_FILE, {"last": 0, "refs": []})
 
-    if time.time() - cache.get("last", 0) > CACHE_REFRESH_SECONDS or not cache.get("refs"):
-        print("Atualizando cache de imagens do site...")
+    if now() - cache["last"] > CACHE_REFRESH_SECONDS or not cache["refs"]:
         refs = build_refs()
-        cache = {"last": time.time(), "refs": refs}
+        cache = {"last": now(), "refs": refs}
         save_json(CACHE_FILE, cache)
-    else:
-        refs = cache["refs"]
-        print(f"Cache carregado: {len(refs)} referências (sem atualizar)")
 
-    return refs
+    return cache["refs"]
 
 # =========================
-# EXTRAÇÃO MELHORADA DE IMAGENS
+# SCRAPE
 # =========================
 
-def extract_first_from_srcset(srcset_value):
-    if not srcset_value:
-        return None
-    parts = [p.strip() for p in srcset_value.split(",") if p.strip()]
-    if not parts:
-        return None
-    first = parts[0].split(" ")[0].strip()
-    return first if first else None
-
-def extract_background_image_urls(style_value):
-    if not style_value:
-        return []
-    matches = re.findall(r'background-image\s*:\s*url\((.*?)\)', style_value, flags=re.IGNORECASE)
-    urls = []
-    for m in matches:
-        u = m.strip().strip('"').strip("'")
-        if u:
-            urls.append(u)
-    return urls
-
-def extract_page_images(url):
-    r = requests.get(url, headers=USER_AGENT, timeout=20)
-    soup = BeautifulSoup(r.text, "html.parser")
+def extract_images(url):
+    html = requests.get(url, headers=USER_AGENT, timeout=20).text
+    soup = BeautifulSoup(html, "html.parser")
 
     imgs = []
 
-    og = soup.find("meta", property="og:image")
-    if og and og.get("content"):
-        imgs.append(urljoin(url, og["content"]))
-
-    tw = soup.find("meta", attrs={"name": "twitter:image"})
-    if tw and tw.get("content"):
-        imgs.append(urljoin(url, tw["content"]))
-
     for img in soup.find_all("img"):
-        candidates = [
-            img.get("src"),
-            img.get("data-src"),
-            img.get("data-lazy-src"),
-            img.get("data-original"),
-            extract_first_from_srcset(img.get("srcset")),
-            extract_first_from_srcset(img.get("data-srcset"))
-        ]
-        for c in candidates:
-            if c:
-                imgs.append(urljoin(url, c))
+        if img.get("src"):
+            imgs.append(urljoin(url, img["src"]))
 
-    for noscript in soup.find_all("noscript"):
-        try:
-            inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
-            for img in inner.find_all("img"):
-                candidates = [
-                    img.get("src"),
-                    img.get("data-src"),
-                    img.get("data-lazy-src"),
-                    img.get("data-original"),
-                    extract_first_from_srcset(img.get("srcset")),
-                    extract_first_from_srcset(img.get("data-srcset"))
-                ]
-                for c in candidates:
-                    if c:
-                        imgs.append(urljoin(url, c))
-        except Exception:
-            continue
+    return unique(imgs)[:MAX_IMAGES_PER_SUSPECT_PAGE], html
 
-    for tag in soup.find_all(style=True):
-        for bg in extract_background_image_urls(tag.get("style")):
-            imgs.append(urljoin(url, bg))
-
-    imgs = unique_keep_order(imgs)
-    imgs = imgs[:MAX_IMAGES_PER_SUSPECT_PAGE]
-
-    return imgs, r.text
-
-# =========================
-# LINKS SUSPEITOS
-# =========================
-
-def suspicious_links(text):
-    links = set()
-    for m in re.findall(r"https?://\S+", text):
-        low = m.lower()
-        if any(x in low for x in ["mega.nz", "drive.google.com", "telegram", "t.me"]):
-            links.add(m)
-    return list(links)
+def suspicious(text):
+    return [l for l in re.findall(r"https?://\S+", text)
+            if any(x in l for x in ["mega", "drive", "telegram"])]
 
 # =========================
 # RSS
@@ -414,244 +244,79 @@ def read_rss(feeds):
         for e in d.entries:
             if hasattr(e, "link"):
                 urls.append(e.link)
-
-    urls = list(set(urls))
-    print(f"Links coletados do RSS: {len(urls)}")
-    return urls
-
-# =========================
-# ESTADO SEMANAL
-# =========================
-
-def load_seen_state():
-    if RESETAR_LINKS_VISTOS:
-        print("RESETAR_LINKS_VISTOS=True -> limpando lista de links já vistos...")
-        save_json(SEEN_FILE, {})
-
-    data = load_json(SEEN_FILE, {})
-
-    seen_list = data.get("seen")
-    if seen_list is None:
-        seen_list = data.get("seen_urls", [])
-
-    weekly = data.get("weekly")
-    if weekly is None:
-        weekly = {
-            "start": current_timestamp(),
-            "analyzed": 0,
-            "alerts": 0,
-            "max_score_below_threshold": 0,
-            "top_scores_below_threshold": []
-        }
-
-    if "top_scores_below_threshold" not in weekly:
-        weekly["top_scores_below_threshold"] = []
-
-    return {"seen": seen_list, "weekly": weekly}
-
-def save_seen_state(state):
-    save_json(SEEN_FILE, state)
-
-def maybe_send_test_weekly_report(state):
-    if not EMAIL_TESTE:
-        return
-
-    weekly = state["weekly"]
-    analyzed = weekly.get("analyzed", 0)
-    alerts = weekly.get("alerts", 0)
-    max_score_below = weekly.get("max_score_below_threshold", 0)
-    top_scores = weekly.get("top_scores_below_threshold", [])
-
-    if alerts == 0:
-        body = (
-            "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
-            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
-            "com seus arquivos digitais neste período.\n\n"
-            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n"
-            f"Top 3 percentuais encontrados: {format_top_scores(top_scores)}\n\n"
-            "Este é um envio de teste para validar o formato do relatório semanal.\n"
-            "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
-        )
-    else:
-        body = (
-            "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
-            f"O agente avaliou {analyzed} links suspeitos neste período.\n"
-            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
-            f"O maior percentual abaixo do limiar observado foi de {max_score_below:.1f}%.\n"
-            f"Top 3 percentuais abaixo do limiar: {format_top_scores(top_scores)}\n\n"
-            "Este é um envio de teste para validar o formato do relatório semanal.\n"
-            "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
-        )
-
-    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes (TESTE)", body)
-
-def maybe_send_weekly_report(state):
-    now = current_timestamp()
-    weekly = state["weekly"]
-
-    if now - weekly["start"] < WEEKLY_REPORT_SECONDS:
-        return state
-
-    analyzed = weekly.get("analyzed", 0)
-    alerts = weekly.get("alerts", 0)
-    max_score_below = weekly.get("max_score_below_threshold", 0)
-    top_scores = weekly.get("top_scores_below_threshold", [])
-
-    if alerts == 0:
-        body = (
-            "Relatório Semanal do Agente de Monitoramento\n\n"
-            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
-            "com seus arquivos digitais nesta semana.\n\n"
-            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n"
-            f"Top 3 percentuais encontrados: {format_top_scores(top_scores)}\n\n"
-            "Isso pode significar que:\n"
-            "- não houve aparição pública de cópias não autorizadas;\n"
-            "- ou os materiais encontrados apresentaram apenas semelhança parcial.\n"
-        )
-    else:
-        body = (
-            "Relatório Semanal do Agente de Monitoramento\n\n"
-            f"O agente avaliou {analyzed} links suspeitos nesta semana.\n"
-            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
-            f"O maior percentual abaixo do limiar observado na semana foi de {max_score_below:.1f}%.\n"
-            f"Top 3 percentuais abaixo do limiar: {format_top_scores(top_scores)}\n"
-        )
-
-    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
-
-    state["weekly"] = {
-        "start": now,
-        "analyzed": 0,
-        "alerts": 0,
-        "max_score_below_threshold": 0,
-        "top_scores_below_threshold": []
-    }
-
-    return state
+    return list(set(urls))
 
 # =========================
 # MAIN
 # =========================
 
 def main():
-    print("=== MONITOR START ===")
+    print("START")
 
     feeds = load_lines(FEEDS_FILE)
     whitelist = load_lines(WHITELIST_FILE)
 
-    state = load_seen_state()
-    seen_list = state["seen"]
-
-    print(f"Feeds carregados: {len(feeds)}")
-    print(f"Whitelist entries: {len(whitelist)}")
-    print(f"Links já vistos (cache): {len(seen_list)}")
+    state = load_json(SEEN_FILE, {"seen": [], "weekly": {
+        "start": now(), "analyzed": 0,
+        "alerts": 0, "max": 0, "top": []
+    }})
 
     refs = load_cache()
     urls = read_rss(feeds)
 
-    alerts = []
+    best = state["weekly"]["max"]
+    top = state["weekly"]["top"]
+
     analyzed = 0
-    best_below_threshold = state["weekly"].get("max_score_below_threshold", 0)
-    top_scores = state["weekly"].get("top_scores_below_threshold", [])
 
     for url in urls:
-        if url in seen_list:
+        if url in state["seen"]:
             continue
 
-        seen_list.append(url)
+        state["seen"].append(url)
 
-        if is_whitelisted(url, whitelist):
-            continue
-
-        try:
-            images, html = extract_page_images(url)
-        except Exception:
-            continue
-
+        imgs, html = extract_images(url)
         analyzed += 1
-        sus_links = suspicious_links(html)
-        found_for_url = False
 
-        for img in images:
+        for im in imgs:
             try:
-                b = download_bytes(img)
-                pil = bytes_to_pil(b)
-                gray = pil_to_gray_np(pil)
-            except Exception:
+                pimg = pil(download(im))
+                g = gray(pimg)
+            except:
                 continue
 
-            for ref in refs:
-                score_hash = similarity_hash_percent(pil, ref)
+            for r in refs:
+                h = hash_score(pimg, r)
 
-                if score_hash > best_below_threshold:
-                    best_below_threshold = score_hash
+                best = max(best, h)
+                top = update_top(top, h)
 
-                top_scores = update_top_scores(top_scores, score_hash, limit=3)
-
-                if score_hash < INITIAL_HASH_FILTER:
+                if h < INITIAL_HASH_FILTER:
                     continue
 
-                ref_des = None
-                if ref["orb"]:
-                    ref_des = np.array(ref["orb"], dtype=np.uint8)
-
-                matches = orb_match(gray, ref_des)
-                score_orb = min(100, (matches / 18) * 100)
-
-                score = (score_hash * 0.6) + (score_orb * 0.4)
+                score = h
 
                 if score < ALERT_THRESHOLD_PERCENT:
-                    if score > best_below_threshold:
-                        best_below_threshold = score
-                    top_scores = update_top_scores(top_scores, score, limit=3)
+                    continue
 
-                if score >= ALERT_THRESHOLD_PERCENT:
-                    alerts.append({
-                        "page": url,
-                        "product": ref["product_name"],
-                        "product_url": ref["product_url"],
-                        "image": img,
-                        "score": score,
-                        "links": sus_links
-                    })
-                    found_for_url = True
-                    break
-
-            if found_for_url:
-                break
+                send_email(
+                    "Possível fraude",
+                    f"{url}\nScore: {score:.1f}%"
+                )
 
     state["weekly"]["analyzed"] += analyzed
-    state["weekly"]["alerts"] += len(alerts)
-    state["weekly"]["max_score_below_threshold"] = best_below_threshold
-    state["weekly"]["top_scores_below_threshold"] = top_scores
+    state["weekly"]["max"] = best
+    state["weekly"]["top"] = top
 
-    maybe_send_test_weekly_report(state)
+    if EMAIL_TESTE:
+        send_email(
+            "Relatório TESTE",
+            f"Links analisados: {analyzed}\n"
+            f"Maior score: {best:.1f}%\n"
+            f"Top: {format_scores(top)}"
+        )
 
-    print(f"Links analisados nesta execução: {analyzed}")
-    print(f"Maior score abaixo do limiar nesta execução/semana: {best_below_threshold:.1f}%")
-    print(f"Top 3 scores da semana: {format_top_scores(top_scores)}")
-    print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
-
-    if alerts:
-        body = "Alertas de Possíveis Fraudes\n\n"
-        for a in alerts:
-            body += f"Página suspeita: {a['page']}\n"
-            body += f"Produto parecido: {a['product']}\n"
-            body += f"Seu produto: {a['product_url']}\n"
-            body += f"Imagem suspeita: {a['image']}\n"
-            body += f"Score de similaridade: {a['score']:.1f}%\n"
-
-            if a["links"]:
-                body += "Links suspeitos encontrados:\n"
-                for l in a["links"]:
-                    body += f"- {l}\n"
-
-            body += "\n"
-
-        send_email("Alertas de Possíveis Fraudes", body)
-
-    state = maybe_send_weekly_report(state)
-    save_seen_state(state)
+    save_json(SEEN_FILE, state)
 
 if __name__ == "__main__":
     main()
