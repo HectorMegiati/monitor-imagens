@@ -28,9 +28,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = False
+EMAIL_TESTE = True
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = False
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
