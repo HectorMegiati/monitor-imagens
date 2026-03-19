@@ -16,6 +16,7 @@ import imagehash
 # =========================
 
 ALERT_THRESHOLD_PERCENT = 60
+INITIAL_HASH_FILTER = 25   # antes era 40
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 20
 CACHE_REFRESH_SECONDS = 48 * 60 * 60
@@ -97,6 +98,17 @@ def unique_keep_order(items):
         seen.add(item)
         out.append(item)
     return out
+
+def update_top_scores(existing_scores, new_score, limit=3):
+    scores = list(existing_scores or [])
+    scores.append(float(new_score))
+    scores = sorted(scores, reverse=True)
+    return scores[:limit]
+
+def format_top_scores(scores):
+    if not scores:
+        return "Nenhum score relevante foi encontrado."
+    return ", ".join([f"{s:.1f}%" for s in scores])
 
 # =========================
 # EMAIL
@@ -190,11 +202,6 @@ def orb_match(gray, ref_des):
 # =========================
 
 def hash_distance_to_percent(distance):
-    """
-    Cada hash tem distância de 0 a 64.
-    0 = 100%
-    64 = 0%
-    """
     distance = max(0, min(64, distance))
     return (1 - (distance / 64.0)) * 100
 
@@ -220,6 +227,9 @@ def wc_products():
     page = 1
 
     while True:
+        url = f"{WC_BASE_URL}/wp-json/wc/v3/products}"
+
+        # correção simples para evitar erro silencioso de formatação acidental
         url = f"{WC_BASE_URL}/wp-json/wc/v3/products"
 
         params = {
@@ -430,8 +440,12 @@ def load_seen_state():
             "start": current_timestamp(),
             "analyzed": 0,
             "alerts": 0,
-            "max_score_below_threshold": 0
+            "max_score_below_threshold": 0,
+            "top_scores_below_threshold": []
         }
+
+    if "top_scores_below_threshold" not in weekly:
+        weekly["top_scores_below_threshold"] = []
 
     return {"seen": seen_list, "weekly": weekly}
 
@@ -446,13 +460,15 @@ def maybe_send_test_weekly_report(state):
     analyzed = weekly.get("analyzed", 0)
     alerts = weekly.get("alerts", 0)
     max_score_below = weekly.get("max_score_below_threshold", 0)
+    top_scores = weekly.get("top_scores_below_threshold", [])
 
     if alerts == 0:
         body = (
             "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
             f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
             "com seus arquivos digitais neste período.\n\n"
-            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n\n"
+            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n"
+            f"Top 3 percentuais encontrados: {format_top_scores(top_scores)}\n\n"
             "Este é um envio de teste para validar o formato do relatório semanal.\n"
             "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
         )
@@ -461,7 +477,8 @@ def maybe_send_test_weekly_report(state):
             "Relatório Semanal do Agente de Monitoramento (TESTE)\n\n"
             f"O agente avaliou {analyzed} links suspeitos neste período.\n"
             f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
-            f"O maior percentual abaixo do limiar observado foi de {max_score_below:.1f}%.\n\n"
+            f"O maior percentual abaixo do limiar observado foi de {max_score_below:.1f}%.\n"
+            f"Top 3 percentuais abaixo do limiar: {format_top_scores(top_scores)}\n\n"
             "Este é um envio de teste para validar o formato do relatório semanal.\n"
             "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
         )
@@ -478,13 +495,15 @@ def maybe_send_weekly_report(state):
     analyzed = weekly.get("analyzed", 0)
     alerts = weekly.get("alerts", 0)
     max_score_below = weekly.get("max_score_below_threshold", 0)
+    top_scores = weekly.get("top_scores_below_threshold", [])
 
     if alerts == 0:
         body = (
             "Relatório Semanal do Agente de Monitoramento\n\n"
             f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
             "com seus arquivos digitais nesta semana.\n\n"
-            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n\n"
+            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n"
+            f"Top 3 percentuais encontrados: {format_top_scores(top_scores)}\n\n"
             "Isso pode significar que:\n"
             "- não houve aparição pública de cópias não autorizadas;\n"
             "- ou os materiais encontrados apresentaram apenas semelhança parcial.\n"
@@ -495,6 +514,7 @@ def maybe_send_weekly_report(state):
             f"O agente avaliou {analyzed} links suspeitos nesta semana.\n"
             f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
             f"O maior percentual abaixo do limiar observado na semana foi de {max_score_below:.1f}%.\n"
+            f"Top 3 percentuais abaixo do limiar: {format_top_scores(top_scores)}\n"
         )
 
     send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
@@ -503,7 +523,8 @@ def maybe_send_weekly_report(state):
         "start": now,
         "analyzed": 0,
         "alerts": 0,
-        "max_score_below_threshold": 0
+        "max_score_below_threshold": 0,
+        "top_scores_below_threshold": []
     }
 
     return state
@@ -531,6 +552,7 @@ def main():
     alerts = []
     analyzed = 0
     best_below_threshold = state["weekly"].get("max_score_below_threshold", 0)
+    top_scores = state["weekly"].get("top_scores_below_threshold", [])
 
     for url in urls:
         if url in seen_list:
@@ -564,7 +586,9 @@ def main():
                 if score_hash > best_below_threshold:
                     best_below_threshold = score_hash
 
-                if score_hash < 40:
+                top_scores = update_top_scores(top_scores, score_hash, limit=3)
+
+                if score_hash < INITIAL_HASH_FILTER:
                     continue
 
                 ref_des = None
@@ -576,8 +600,10 @@ def main():
 
                 score = (score_hash * 0.6) + (score_orb * 0.4)
 
-                if score < ALERT_THRESHOLD_PERCENT and score > best_below_threshold:
-                    best_below_threshold = score
+                if score < ALERT_THRESHOLD_PERCENT:
+                    if score > best_below_threshold:
+                        best_below_threshold = score
+                    top_scores = update_top_scores(top_scores, score, limit=3)
 
                 if score >= ALERT_THRESHOLD_PERCENT:
                     alerts.append({
@@ -597,11 +623,13 @@ def main():
     state["weekly"]["analyzed"] += analyzed
     state["weekly"]["alerts"] += len(alerts)
     state["weekly"]["max_score_below_threshold"] = best_below_threshold
+    state["weekly"]["top_scores_below_threshold"] = top_scores
 
     maybe_send_test_weekly_report(state)
 
     print(f"Links analisados nesta execução: {analyzed}")
     print(f"Maior score abaixo do limiar nesta execução/semana: {best_below_threshold:.1f}%")
+    print(f"Top 3 scores da semana: {format_top_scores(top_scores)}")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
     if alerts:
