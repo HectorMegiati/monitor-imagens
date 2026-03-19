@@ -27,13 +27,13 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES MANUAIS
 # =========================
 # Quando True, envia imediatamente um e-mail com o formato do relatório semanal
-EMAIL_TESTE = False
+EMAIL_TESTE = True
 
 # Use True uma única vez se quiser reconstruir o cache de referências do site
-RESETAR_CACHE = False
+RESETAR_CACHE = True
 
 # Use True uma única vez se quiser reavaliar todos os links novamente
-RESETAR_LINKS_VISTOS = False
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
