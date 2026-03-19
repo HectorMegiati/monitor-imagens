@@ -15,7 +15,7 @@ import imagehash
 # CONFIGURAÇÕES
 # =========================
 
-ALERT_THRESHOLD_PERCENT = 65
+ALERT_THRESHOLD_PERCENT = 60
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 20
 CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
