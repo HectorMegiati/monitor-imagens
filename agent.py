@@ -1,5 +1,5 @@
 import os, json, time, re, smtplib
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, parse_qs, unquote
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -28,9 +28,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = True
+EMAIL_TESTE = False
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -40,6 +40,22 @@ FEEDS_FILE = "feeds.txt"
 WHITELIST_FILE = "whitelist.txt"
 SEEN_FILE = "state/seen.json"
 CACHE_FILE = "state/ref_cache.json"
+
+# =========================
+# DOMÍNIOS RUIDOSOS
+# =========================
+
+NOISY_DOMAINS = [
+    "google.com",
+    "instagram.com",
+    "facebook.com",
+    "tiktok.com",
+    "jobrapido.com",
+    "folha.uol.com.br",
+    "uol.com.br",
+    "globo.com",
+    "g1.globo.com"
+]
 
 # =========================
 # ENV
@@ -109,7 +125,7 @@ def build_default_weekly():
     }
 
 # =========================
-# WHITELIST
+# WHITELIST / DOMAINS
 # =========================
 
 def safe_domain(url):
@@ -118,6 +134,9 @@ def safe_domain(url):
         return d[4:] if d.startswith("www.") else d
     except:
         return ""
+
+def domain_matches(domain, pattern):
+    return domain == pattern or domain.endswith("." + pattern)
 
 def is_whitelisted(url, entries):
     domain = safe_domain(url)
@@ -128,13 +147,43 @@ def is_whitelisted(url, entries):
             continue
 
         if "/" not in w:
-            if domain == w or domain.endswith("." + w):
+            if domain_matches(domain, w):
                 return True
         else:
             if w in url.lower():
                 return True
 
     return False
+
+def is_noisy_domain(url):
+    d = safe_domain(url)
+    for nd in NOISY_DOMAINS:
+        if domain_matches(d, nd):
+            return True
+    return False
+
+# =========================
+# GOOGLE URL UNWRAP
+# =========================
+
+def unwrap_google_url(url):
+    """
+    Converte links do tipo google.com/url?...&url=https://destino...
+    no link real.
+    """
+    try:
+        parsed = urlparse(url)
+        domain = safe_domain(url)
+
+        if domain in ["google.com", "google.com.br"] and parsed.path == "/url":
+            qs = parse_qs(parsed.query)
+            target = qs.get("url") or qs.get("q")
+            if target and target[0]:
+                return unquote(target[0])
+
+        return url
+    except:
+        return url
 
 # =========================
 # EMAIL
@@ -329,11 +378,9 @@ def extract_images(url):
 
     final_url = r.url
 
-    # caso o próprio link seja imagem
     if is_direct_image_url(final_url, content_type):
         return [final_url], "", content_type
 
-    # se não for HTML, não dá para raspar imagem com BS4
     if "html" not in content_type and "xml" not in content_type and content_type != "":
         return [], r.text if hasattr(r, "text") else "", content_type
 
@@ -341,7 +388,6 @@ def extract_images(url):
     soup = BeautifulSoup(html, "html.parser")
     imgs = []
 
-    # meta tags
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
         imgs.append(urljoin(final_url, og["content"]))
@@ -350,7 +396,6 @@ def extract_images(url):
     if tw and tw.get("content"):
         imgs.append(urljoin(final_url, tw["content"]))
 
-    # links comuns de imagens
     for link in soup.find_all("link", href=True):
         rel = " ".join(link.get("rel", [])) if isinstance(link.get("rel"), list) else str(link.get("rel", ""))
         href = link.get("href")
@@ -361,7 +406,6 @@ def extract_images(url):
         if "image" in low_rel or any(low_href.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
             imgs.append(urljoin(final_url, href))
 
-    # img tags
     for img in soup.find_all("img"):
         candidates = [
             img.get("src"),
@@ -376,7 +420,6 @@ def extract_images(url):
             if c:
                 imgs.append(urljoin(final_url, c))
 
-    # noscript
     for noscript in soup.find_all("noscript"):
         try:
             inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
@@ -395,14 +438,12 @@ def extract_images(url):
         except Exception:
             pass
 
-    # background-image inline
     for tag in soup.find_all(style=True):
         for bg in extract_background_image_urls(tag.get("style")):
             imgs.append(urljoin(final_url, bg))
 
     imgs = unique(imgs)
 
-    # filtra coisas obviamente irrelevantes
     filtered = []
     for i in imgs:
         low = i.lower()
@@ -428,8 +469,9 @@ def read_rss(feeds):
         d = feedparser.parse(f)
         for e in d.entries:
             if hasattr(e, "link"):
-                urls.append(e.link)
-    urls = list(set(urls))
+                urls.append(unwrap_google_url(e.link))
+
+    urls = unique(urls)
     print(f"Links coletados do RSS: {len(urls)}")
     return urls
 
@@ -543,6 +585,7 @@ def main():
     alerts = []
     content_type_counter = {}
     no_image_examples = []
+    noisy_skipped = 0
 
     for url in urls:
         if url in state["seen"]:
@@ -551,6 +594,10 @@ def main():
         state["seen"].append(url)
 
         if is_whitelisted(url, whitelist):
+            continue
+
+        if is_noisy_domain(url):
+            noisy_skipped += 1
             continue
 
         try:
@@ -608,6 +655,7 @@ def main():
     state["weekly"]["top"] = top
 
     print(f"Páginas analisadas: {analyzed}")
+    print(f"Páginas ignoradas por domínio ruidoso: {noisy_skipped}")
     print(f"Páginas com imagens extraídas: {pages_with_images}")
     print(f"Comparações de imagem realizadas: {image_comparisons}")
     print(f"Maior score nesta execução/semana: {best:.1f}%")
