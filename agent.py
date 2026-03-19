@@ -28,9 +28,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = True
+EMAIL_TESTE = False
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -54,7 +54,10 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-USER_AGENT = {"User-Agent": "Mozilla/5.0"}
+USER_AGENT = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+}
 
 # =========================
 # UTIL
@@ -154,7 +157,7 @@ def send_email(subject, body):
 # =========================
 
 def download(url):
-    r = requests.get(url, headers=USER_AGENT, timeout=20)
+    r = requests.get(url, headers=USER_AGENT, timeout=20, allow_redirects=True)
     r.raise_for_status()
     return r.content
 
@@ -305,33 +308,75 @@ def extract_background_image_urls(style_value):
             urls.append(u)
     return urls
 
-def extract_images(url):
-    html = requests.get(url, headers=USER_AGENT, timeout=20).text
-    soup = BeautifulSoup(html, "html.parser")
+def is_direct_image_url(url, content_type):
+    low = url.lower()
+    if any(low.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"]):
+        return True
+    if content_type and content_type.startswith("image/"):
+        return True
+    return False
 
+def fetch_page(url):
+    r = requests.get(url, headers=USER_AGENT, timeout=20, allow_redirects=True)
+    content_type = (r.headers.get("Content-Type") or "").lower()
+    return r, content_type
+
+def extract_images(url):
+    try:
+        r, content_type = fetch_page(url)
+    except Exception:
+        return [], "", "fetch_error"
+
+    final_url = r.url
+
+    # caso o próprio link seja imagem
+    if is_direct_image_url(final_url, content_type):
+        return [final_url], "", content_type
+
+    # se não for HTML, não dá para raspar imagem com BS4
+    if "html" not in content_type and "xml" not in content_type and content_type != "":
+        return [], r.text if hasattr(r, "text") else "", content_type
+
+    html = r.text
+    soup = BeautifulSoup(html, "html.parser")
     imgs = []
 
+    # meta tags
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
-        imgs.append(urljoin(url, og["content"]))
+        imgs.append(urljoin(final_url, og["content"]))
 
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
-        imgs.append(urljoin(url, tw["content"]))
+        imgs.append(urljoin(final_url, tw["content"]))
 
+    # links comuns de imagens
+    for link in soup.find_all("link", href=True):
+        rel = " ".join(link.get("rel", [])) if isinstance(link.get("rel"), list) else str(link.get("rel", ""))
+        href = link.get("href")
+        if not href:
+            continue
+        low_rel = rel.lower()
+        low_href = href.lower()
+        if "image" in low_rel or any(low_href.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+            imgs.append(urljoin(final_url, href))
+
+    # img tags
     for img in soup.find_all("img"):
         candidates = [
             img.get("src"),
             img.get("data-src"),
             img.get("data-lazy-src"),
             img.get("data-original"),
+            img.get("data-image"),
             extract_first_from_srcset(img.get("srcset")),
             extract_first_from_srcset(img.get("data-srcset"))
         ]
         for c in candidates:
             if c:
-                imgs.append(urljoin(url, c))
+                imgs.append(urljoin(final_url, c))
 
+    # noscript
     for noscript in soup.find_all("noscript"):
         try:
             inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
@@ -346,16 +391,26 @@ def extract_images(url):
                 ]
                 for c in candidates:
                     if c:
-                        imgs.append(urljoin(url, c))
+                        imgs.append(urljoin(final_url, c))
         except Exception:
             pass
 
+    # background-image inline
     for tag in soup.find_all(style=True):
         for bg in extract_background_image_urls(tag.get("style")):
-            imgs.append(urljoin(url, bg))
+            imgs.append(urljoin(final_url, bg))
 
-    imgs = unique(imgs)[:MAX_IMAGES_PER_SUSPECT_PAGE]
-    return imgs, html
+    imgs = unique(imgs)
+
+    # filtra coisas obviamente irrelevantes
+    filtered = []
+    for i in imgs:
+        low = i.lower()
+        if any(x in low for x in [".svg", "logo", "avatar", "favicon", "icon"]):
+            continue
+        filtered.append(i)
+
+    return filtered[:MAX_IMAGES_PER_SUSPECT_PAGE], html, content_type or "text/html"
 
 def suspicious(text):
     return [
@@ -486,6 +541,8 @@ def main():
     pages_with_images = 0
     image_comparisons = 0
     alerts = []
+    content_type_counter = {}
+    no_image_examples = []
 
     for url in urls:
         if url in state["seen"]:
@@ -497,14 +554,18 @@ def main():
             continue
 
         try:
-            imgs, html = extract_images(url)
+            imgs, html, content_type = extract_images(url)
         except Exception:
             continue
 
         analyzed += 1
+        content_type_counter[content_type] = content_type_counter.get(content_type, 0) + 1
 
         if imgs:
             pages_with_images += 1
+        else:
+            if len(no_image_examples) < 5:
+                no_image_examples.append(f"{url} [{content_type}]")
 
         for im in imgs:
             try:
@@ -552,6 +613,8 @@ def main():
     print(f"Maior score nesta execução/semana: {best:.1f}%")
     print(f"Top 3 scores da semana: {format_scores(top)}")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
+    print(f"Tipos de conteúdo encontrados: {content_type_counter}")
+    print(f"Exemplos sem imagens: {no_image_examples}")
 
     maybe_send_test_report(state)
 
