@@ -18,10 +18,22 @@ import imagehash
 ALERT_THRESHOLD_PERCENT = 60
 IMAGES_PER_PRODUCT = 3
 MAX_IMAGES_PER_SUSPECT_PAGE = 20
-CACHE_REFRESH_SECONDS = 48 * 60 * 60  # 48h (dia sim/dia não)
-WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60  # 7 dias
+CACHE_REFRESH_SECONDS = 48 * 60 * 60
+WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
+
+# =========================
+# CONTROLES MANUAIS
+# =========================
+# Coloque True quando quiser testar envio de e-mail
+EMAIL_TESTE = True
+
+# Coloque True uma única vez se quiser reconstruir o cache de imagens do site
+RESETAR_CACHE = True
+
+# Coloque True uma única vez se quiser reavaliar todos os links novamente
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
@@ -115,6 +127,16 @@ def send_email(subject, body):
 
     server.quit()
     print("E-mail enviado.")
+
+def maybe_send_test_email():
+    if not EMAIL_TESTE:
+        return
+    body = (
+        "Teste de envio do agente de monitoramento.\n\n"
+        "Se você recebeu esta mensagem, o envio por e-mail está funcionando corretamente.\n"
+        "Depois do teste, volte EMAIL_TESTE para False no arquivo agent.py."
+    )
+    send_email("Email teste - Agente de Monitoramento", body)
 
 # =========================
 # WHITELIST
@@ -274,10 +296,14 @@ def build_refs():
 # =========================
 
 def load_cache():
+    if RESETAR_CACHE:
+        print("RESETAR_CACHE=True -> limpando cache de referências do site...")
+        save_json(CACHE_FILE, {"last": 0, "refs": []})
+
     cache = load_json(CACHE_FILE, {"last": 0, "refs": []})
 
     if time.time() - cache.get("last", 0) > CACHE_REFRESH_SECONDS or not cache.get("refs"):
-        print("Atualizando cache de imagens do site (48h)...")
+        print("Atualizando cache de imagens do site...")
         refs = build_refs()
         cache = {
             "last": time.time(),
@@ -320,17 +346,14 @@ def extract_page_images(url):
 
     imgs = []
 
-    # og:image
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
         imgs.append(urljoin(url, og["content"]))
 
-    # twitter:image
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
         imgs.append(urljoin(url, tw["content"]))
 
-    # imagens em <img>
     for img in soup.find_all("img"):
         candidates = [
             img.get("src"),
@@ -345,7 +368,6 @@ def extract_page_images(url):
             if c:
                 imgs.append(urljoin(url, c))
 
-    # imagens em <noscript> (muito comum em lazy load)
     for noscript in soup.find_all("noscript"):
         try:
             inner = BeautifulSoup(noscript.decode_contents(), "html.parser")
@@ -364,7 +386,6 @@ def extract_page_images(url):
         except Exception:
             continue
 
-    # imagens em style="background-image:url(...)"
     for tag in soup.find_all(style=True):
         for bg in extract_background_image_urls(tag.get("style")):
             imgs.append(urljoin(url, bg))
@@ -410,6 +431,10 @@ def read_rss(feeds):
 # =========================
 
 def load_seen_state():
+    if RESETAR_LINKS_VISTOS:
+        print("RESETAR_LINKS_VISTOS=True -> limpando lista de links já vistos...")
+        save_json(SEEN_FILE, {})
+
     data = load_json(SEEN_FILE, {})
 
     seen_list = data.get("seen")
@@ -421,7 +446,8 @@ def load_seen_state():
         weekly = {
             "start": current_timestamp(),
             "analyzed": 0,
-            "alerts": 0
+            "alerts": 0,
+            "max_score_below_threshold": 0
         }
 
     return {
@@ -441,21 +467,24 @@ def maybe_send_weekly_report(state):
 
     analyzed = weekly.get("analyzed", 0)
     alerts = weekly.get("alerts", 0)
+    max_score_below = weekly.get("max_score_below_threshold", 0)
 
     if alerts == 0:
         body = (
             "Relatório Semanal do Agente de Monitoramento\n\n"
             f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
             "com seus arquivos digitais nesta semana.\n\n"
+            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {max_score_below:.1f}%.\n\n"
             "Isso pode significar que:\n"
             "- não houve aparição pública de cópias não autorizadas;\n"
-            "- ou o volume de links recebidos para análise ainda está baixo.\n"
+            "- ou os materiais encontrados apresentaram apenas semelhança parcial.\n"
         )
     else:
         body = (
             "Relatório Semanal do Agente de Monitoramento\n\n"
             f"O agente avaliou {analyzed} links suspeitos nesta semana.\n"
             f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
+            f"O maior percentual abaixo do limiar observado na semana foi de {max_score_below:.1f}%.\n"
         )
 
     send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
@@ -463,7 +492,8 @@ def maybe_send_weekly_report(state):
     state["weekly"] = {
         "start": now,
         "analyzed": 0,
-        "alerts": 0
+        "alerts": 0,
+        "max_score_below_threshold": 0
     }
 
     return state
@@ -474,6 +504,8 @@ def maybe_send_weekly_report(state):
 
 def main():
     print("=== MONITOR START ===")
+
+    maybe_send_test_email()
 
     feeds = load_lines(FEEDS_FILE)
     whitelist = load_lines(WHITELIST_FILE)
@@ -490,6 +522,7 @@ def main():
 
     alerts = []
     analyzed = 0
+    best_below_threshold = state["weekly"].get("max_score_below_threshold", 0)
 
     for url in urls:
         if url in seen_list:
@@ -533,6 +566,9 @@ def main():
 
                 score = (score_hash * 0.6) + (score_orb * 0.4)
 
+                if score < ALERT_THRESHOLD_PERCENT and score > best_below_threshold:
+                    best_below_threshold = score
+
                 if score >= ALERT_THRESHOLD_PERCENT:
                     alerts.append({
                         "page": url,
@@ -550,8 +586,10 @@ def main():
 
     state["weekly"]["analyzed"] += analyzed
     state["weekly"]["alerts"] += len(alerts)
+    state["weekly"]["max_score_below_threshold"] = best_below_threshold
 
     print(f"Links analisados nesta execução: {analyzed}")
+    print(f"Maior score abaixo do limiar nesta execução/semana: {best_below_threshold:.1f}%")
     print(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
 
     if alerts:
