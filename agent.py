@@ -28,9 +28,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = False
+EMAIL_TESTE = True
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = False
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
@@ -47,6 +47,7 @@ CACHE_FILE = "state/ref_cache.json"
 
 NOISY_DOMAINS = [
     "google.com",
+    "google.com.br",
     "instagram.com",
     "facebook.com",
     "tiktok.com",
@@ -124,8 +125,14 @@ def build_default_weekly():
         "top": []
     }
 
+def get_ref_product_name(ref):
+    return ref.get("product") or ref.get("product_name") or "(sem nome)"
+
+def get_ref_product_url(ref):
+    return ref.get("url") or ref.get("product_url") or ""
+
 # =========================
-# WHITELIST / DOMAINS
+# WHITELIST
 # =========================
 
 def safe_domain(url):
@@ -167,10 +174,6 @@ def is_noisy_domain(url):
 # =========================
 
 def unwrap_google_url(url):
-    """
-    Converte links do tipo google.com/url?...&url=https://destino...
-    no link real.
-    """
     try:
         parsed = urlparse(url)
         domain = safe_domain(url)
@@ -642,8 +645,8 @@ def main():
                 if score >= ALERT_THRESHOLD_PERCENT:
                     alerts.append({
                         "page": url,
-                        "product": r["product"],
-                        "product_url": r["url"],
+                        "product": get_ref_product_name(r),
+                        "product_url": get_ref_product_url(r),
                         "image": im,
                         "score": score,
                         "links": suspicious(html)
