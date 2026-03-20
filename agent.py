@@ -17,16 +17,36 @@ import imagehash
 # CONFIGURAÇÕES
 # =========================
 
-ALERT_THRESHOLD_PERCENT = 60
-INITIAL_HASH_FILTER = 20
+# Score mínimo para considerar que vale registrar internamente
+INITIAL_HASH_FILTER = 35
+
+# Score mínimo para ir ao e-mail de revisão manual
+REVIEW_THRESHOLD_PERCENT = 88
+
+# Quantidade de imagens de cada produto WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
-MAX_IMAGES_PER_SUSPECT_PAGE = 8
+
+# Quantidade máxima de imagens de uma página suspeita a comparar
+MAX_IMAGES_PER_SUSPECT_PAGE = 6
+
+# Quantidade máxima de páginas por execução
 MAX_PAGES_PER_RUN = 15
+
+# Atualização do cache de referências
 CACHE_REFRESH_SECONDS = 48 * 60 * 60
+
+# Relatório semanal
 WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
-MIN_IMAGE_SIDE = 24
+
+# Tamanho mínimo de imagem
+MIN_IMAGE_SIDE = 80
+
+# Timeouts
 REQUEST_TIMEOUT = 12
-TOP_MATCHES_LIMIT = 3
+
+# Limites de ranking
+TOP_MATCHES_LIMIT = 5
+TOP_SCORES_LIMIT = 5
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
@@ -57,6 +77,63 @@ NOISY_DOMAINS = [
     "instagram.com",
     "facebook.com",
     "tiktok.com",
+]
+
+# =========================
+# FILTROS DE IMAGEM / LAYOUT
+# =========================
+
+NOISY_IMAGE_HINTS = [
+    "logo",
+    "site-logo",
+    "brand",
+    "branding",
+    "header",
+    "footer",
+    "favicon",
+    "icon",
+    "avatar",
+    "profile",
+    "thumb",
+    "thumbnail",
+    "sprite",
+    "placeholder",
+    "banner",
+    "ads",
+    "pixel",
+    "loader",
+]
+
+PRODUCT_POSITIVE_HINTS = [
+    "product",
+    "produto",
+    "kit",
+    "digital",
+    "arquivo",
+    "png",
+    "printable",
+    "mockup",
+    "gallery",
+    "woocommerce",
+]
+
+TEXTUAL_SUSPICIOUS_HINTS = [
+    "kit digital",
+    "arquivo digital",
+    "arquivo",
+    "png",
+    "imprimir",
+    "impressao",
+    "impressão",
+    "silhouette",
+    "studio",
+    "printable",
+    "papelaria",
+    "mimo",
+    "lembrancinha",
+    "adesivo",
+    "caixa",
+    "topper",
 ]
 
 # =========================
@@ -116,33 +193,6 @@ def unique(items: list[str]) -> list[str]:
 def now() -> int:
     return int(time.time())
 
-def build_default_weekly() -> dict:
-    return {
-        "start": now(),
-        "analyzed": 0,
-        "alerts": 0,
-        "max": 0.0,
-        "top_scores": [],
-        "top_matches": []
-    }
-
-def format_scores(scores: list[float] | None) -> str:
-    if not scores:
-        return "Nenhum"
-    return ", ".join(f"{s:.1f}%" for s in scores)
-
-def update_top(scores: list[float] | None, new_score: float, limit: int = 3) -> list[float]:
-    values = list(scores or [])
-    values.append(float(new_score))
-    values = sorted(values, reverse=True)
-    return values[:limit]
-
-def get_ref_product_name(ref: dict) -> str:
-    return ref.get("product") or ref.get("product_name") or "(sem nome)"
-
-def get_ref_product_url(ref: dict) -> str:
-    return ref.get("url") or ref.get("product_url") or ""
-
 def safe_domain(url: str) -> str:
     try:
         d = urlparse(url).netloc.lower()
@@ -153,30 +203,54 @@ def safe_domain(url: str) -> str:
 def domain_matches(domain: str, pattern: str) -> bool:
     return domain == pattern or domain.endswith("." + pattern)
 
-def sort_and_trim_matches(matches: list[dict], limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
-    sorted_matches = sorted(matches, key=lambda x: float(x.get("score", 0)), reverse=True)
-    return sorted_matches[:limit]
+def normalize_text(s: str | None) -> str:
+    return re.sub(r"\s+", " ", (s or "").strip().lower())
 
-def merge_match(existing: list[dict], new_match: dict, limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
-    combined = list(existing or [])
-    combined.append(new_match)
+def truncate_text(s: str, limit: int = 180) -> str:
+    s = (s or "").strip()
+    if len(s) <= limit:
+        return s
+    return s[: limit - 3] + "..."
 
-    dedup = []
-    seen_keys = set()
+def update_top(scores: list[float] | None, new_score: float, limit: int = TOP_SCORES_LIMIT) -> list[float]:
+    values = list(scores or [])
+    values.append(float(new_score))
+    values = sorted(values, reverse=True)
+    return values[:limit]
 
-    for item in sorted(combined, key=lambda x: float(x.get("score", 0)), reverse=True):
-        key = (
-            item.get("page", ""),
-            item.get("image", ""),
-            item.get("product", ""),
-            round(float(item.get("score", 0)), 2),
-        )
-        if key in seen_keys:
-            continue
-        seen_keys.add(key)
-        dedup.append(item)
+def format_scores(scores: list[float] | None) -> str:
+    if not scores:
+        return "Nenhum"
+    return ", ".join(f"{s:.1f}%" for s in scores)
 
-    return dedup[:limit]
+def get_ref_product_name(ref: dict) -> str:
+    return ref.get("product") or ref.get("product_name") or "(sem nome)"
+
+def get_ref_product_url(ref: dict) -> str:
+    return ref.get("url") or ref.get("product_url") or ""
+
+def product_name_tokens(name: str) -> set[str]:
+    text = normalize_text(name)
+    tokens = re.findall(r"[a-z0-9çáéíóúâêôãõ]+", text, flags=re.I)
+    stop = {
+        "de", "da", "do", "das", "dos", "para", "com", "em", "e", "a", "o",
+        "kit", "digital", "arquivo", "png", "arte", "artes"
+    }
+    return {t for t in tokens if len(t) >= 4 and t not in stop}
+
+# =========================
+# ESTADO SEMANAL
+# =========================
+
+def build_default_weekly() -> dict:
+    return {
+        "start": now(),
+        "analyzed": 0,
+        "alerts": 0,
+        "max": 0.0,
+        "top_scores": [],
+        "top_matches": [],
+    }
 
 # =========================
 # WHITELIST / RUIDO
@@ -272,24 +346,36 @@ def is_valid_pil_image(img: Image.Image) -> bool:
     except Exception:
         return False
 
-def hash_triplet(img: Image.Image):
+def compute_hash_triplet(img: Image.Image):
     return imagehash.phash(img), imagehash.dhash(img), imagehash.whash(img)
 
 def hash_distance_to_percent(distance: int) -> float:
     distance = max(0, min(64, distance))
     return (1 - (distance / 64.0)) * 100
 
-def hash_score(img: Image.Image, ref: dict) -> float:
-    ph, dh, wh = hash_triplet(img)
-    d1 = ph - imagehash.hex_to_hash(ref["phash"])
-    d2 = dh - imagehash.hex_to_hash(ref["dhash"])
-    d3 = wh - imagehash.hex_to_hash(ref["whash"])
+def hash_score_from_triplets(img_hashes, ref_hashes) -> float:
+    ph, dh, wh = img_hashes
+    rph, rdh, rwh = ref_hashes
+
+    d1 = ph - rph
+    d2 = dh - rdh
+    d3 = wh - rwh
 
     return (
         hash_distance_to_percent(d1)
         + hash_distance_to_percent(d2)
         + hash_distance_to_percent(d3)
     ) / 3.0
+
+def image_area(img: Image.Image) -> int:
+    w, h = img.size
+    return w * h
+
+def aspect_ratio(img: Image.Image) -> float:
+    w, h = img.size
+    if h == 0:
+        return 999.0
+    return max(w / h, h / w)
 
 # =========================
 # WOO
@@ -312,6 +398,7 @@ def wc_products() -> list[dict]:
             timeout=REQUEST_TIMEOUT,
             headers=USER_AGENT,
         )
+        r.raise_for_status()
         data = r.json()
         if not data:
             break
@@ -332,13 +419,17 @@ def build_refs() -> list[dict]:
     for p in products:
         imgs = (p.get("images") or [])[:IMAGES_PER_PRODUCT]
         for i in imgs:
+            src = i.get("src", "")
+            if not src:
+                continue
+
             try:
-                img_bytes = download(i["src"])
+                img_bytes = download(src)
                 pimg = pil_from_bytes(img_bytes)
                 if not is_valid_pil_image(pimg):
                     continue
 
-                ph, dh, wh = hash_triplet(pimg)
+                ph, dh, wh = compute_hash_triplet(pimg)
                 refs.append({
                     "product": p.get("name", "(sem nome)"),
                     "url": p.get("permalink", ""),
@@ -346,11 +437,26 @@ def build_refs() -> list[dict]:
                     "dhash": str(dh),
                     "whash": str(wh),
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                log(f"Falha ao criar referência do produto '{p.get('name', '(sem nome)')}': {e}")
 
     log(f"Referências criadas: {len(refs)}")
     return refs
+
+def prepare_refs(refs: list[dict]) -> list[dict]:
+    prepared = []
+    for ref in refs:
+        try:
+            prepared.append({
+                **ref,
+                "_ph": imagehash.hex_to_hash(ref["phash"]),
+                "_dh": imagehash.hex_to_hash(ref["dhash"]),
+                "_wh": imagehash.hex_to_hash(ref["whash"]),
+                "_tokens": product_name_tokens(ref.get("product", "")),
+            })
+        except Exception:
+            continue
+    return prepared
 
 def load_cache() -> list[dict]:
     if RESETAR_CACHE:
@@ -366,10 +472,10 @@ def load_cache() -> list[dict]:
         refs = cache["refs"]
         log(f"Cache carregado: {len(refs)} referências")
 
-    return refs
+    return prepare_refs(refs)
 
 # =========================
-# EXTRAÇÃO DE IMAGENS
+# EXTRAÇÃO E FILTRO DE IMAGENS
 # =========================
 
 def extract_first_from_srcset(srcset_value: str | None):
@@ -394,77 +500,230 @@ def is_direct_image_url(url: str, content_type: str) -> bool:
         return True
     return False
 
+def image_candidate_metadata(img_tag, final_url: str) -> dict | None:
+    candidates = [
+        img_tag.get("src"),
+        img_tag.get("data-src"),
+        img_tag.get("data-lazy-src"),
+        img_tag.get("data-original"),
+        img_tag.get("data-image"),
+        extract_first_from_srcset(img_tag.get("srcset")),
+        extract_first_from_srcset(img_tag.get("data-srcset")),
+    ]
+
+    src = None
+    for c in candidates:
+        if c:
+            src = urljoin(final_url, c)
+            break
+
+    if not src:
+        return None
+
+    attrs_joined = " ".join([
+        img_tag.get("alt", "") or "",
+        img_tag.get("title", "") or "",
+        " ".join(img_tag.get("class", []) if isinstance(img_tag.get("class"), list) else [img_tag.get("class", "")]),
+        img_tag.get("id", "") or "",
+        img_tag.get("src", "") or "",
+        img_tag.get("data-src", "") or "",
+    ]).lower()
+
+    parent_text = ""
+    parent = img_tag.parent
+    if parent:
+        parent_text = " ".join([
+            getattr(parent, "name", "") or "",
+            parent.get("class", "") if not isinstance(parent.get("class"), list) else " ".join(parent.get("class")),
+            parent.get("id", "") or "",
+        ]).lower()
+
+    width = None
+    height = None
+    try:
+        width = int(img_tag.get("width")) if img_tag.get("width") else None
+    except Exception:
+        width = None
+    try:
+        height = int(img_tag.get("height")) if img_tag.get("height") else None
+    except Exception:
+        height = None
+
+    return {
+        "url": src,
+        "attrs": attrs_joined,
+        "parent": parent_text,
+        "width": width,
+        "height": height,
+    }
+
+def is_noisy_image_candidate(meta: dict) -> tuple[bool, str]:
+    url = (meta.get("url") or "").lower()
+    attrs = (meta.get("attrs") or "").lower()
+    parent = (meta.get("parent") or "").lower()
+
+    joined = f"{url} {attrs} {parent}"
+
+    for hint in NOISY_IMAGE_HINTS:
+        if hint in joined:
+            return True, f"hint:{hint}"
+
+    if any(x in url for x in [".svg", "favicon", "gravatar"]):
+        return True, "url_noise"
+
+    width = meta.get("width")
+    height = meta.get("height")
+    if width and height:
+        if width < MIN_IMAGE_SIDE or height < MIN_IMAGE_SIDE:
+            return True, "tag_too_small"
+        ratio = max(width / max(height, 1), height / max(width, 1))
+        if ratio >= 4.8:
+            return True, "tag_extreme_ratio"
+
+    return False, ""
+
+def score_candidate_priority(meta: dict) -> int:
+    score = 0
+    joined = f"{meta.get('url', '')} {meta.get('attrs', '')} {meta.get('parent', '')}".lower()
+
+    for hint in PRODUCT_POSITIVE_HINTS:
+        if hint in joined:
+            score += 2
+
+    if "product" in joined:
+        score += 2
+    if "gallery" in joined:
+        score += 2
+    if "woocommerce" in joined:
+        score += 2
+
+    return score
+
+def extract_page_context(soup: BeautifulSoup, final_url: str) -> dict:
+    title = normalize_text(soup.title.get_text(" ", strip=True) if soup.title else "")
+    h1 = normalize_text(soup.find("h1").get_text(" ", strip=True) if soup.find("h1") else "")
+    og_title_tag = soup.find("meta", property="og:title")
+    og_title = normalize_text(og_title_tag.get("content", "") if og_title_tag else "")
+
+    text_chunks = [title, h1, og_title, normalize_text(final_url)]
+    text_joined = " | ".join([t for t in text_chunks if t])
+
+    return {
+        "title": title,
+        "h1": h1,
+        "og_title": og_title,
+        "text": text_joined,
+    }
+
 def extract_images(url: str):
     try:
         r, content_type = fetch_page(url)
-    except Exception:
-        return [], "", "fetch_error"
+    except Exception as e:
+        return [], "", "fetch_error", {}, {"extract_error": str(e)}
 
     final_url = r.url
 
     if is_direct_image_url(final_url, content_type):
-        return [final_url], "", content_type
+        direct_meta = {
+            "url": final_url,
+            "attrs": "",
+            "parent": "",
+            "width": None,
+            "height": None,
+        }
+        return [direct_meta], "", content_type, {"title": "", "h1": "", "og_title": "", "text": normalize_text(final_url)}, {}
 
     if "html" not in content_type and "xml" not in content_type and content_type != "":
-        return [], r.text if hasattr(r, "text") else "", content_type
+        return [], r.text if hasattr(r, "text") else "", content_type, {}, {"non_html_content_type": content_type}
 
     html = r.text
     soup = BeautifulSoup(html, "html.parser")
-    imgs = []
+    page_context = extract_page_context(soup, final_url)
+
+    candidates = []
 
     og = soup.find("meta", property="og:image")
     if og and og.get("content"):
-        imgs.append(urljoin(final_url, og["content"]))
+        candidates.append({
+            "url": urljoin(final_url, og["content"]),
+            "attrs": "og:image",
+            "parent": "meta",
+            "width": None,
+            "height": None,
+        })
 
     tw = soup.find("meta", attrs={"name": "twitter:image"})
     if tw and tw.get("content"):
-        imgs.append(urljoin(final_url, tw["content"]))
+        candidates.append({
+            "url": urljoin(final_url, tw["content"]),
+            "attrs": "twitter:image",
+            "parent": "meta",
+            "width": None,
+            "height": None,
+        })
 
     for img in soup.find_all("img"):
-        candidates = [
-            img.get("src"),
-            img.get("data-src"),
-            img.get("data-lazy-src"),
-            img.get("data-original"),
-            img.get("data-image"),
-            extract_first_from_srcset(img.get("srcset")),
-            extract_first_from_srcset(img.get("data-srcset")),
-        ]
-        for c in candidates:
-            if c:
-                imgs.append(urljoin(final_url, c))
+        meta = image_candidate_metadata(img, final_url)
+        if meta:
+            candidates.append(meta)
 
-    imgs = unique(imgs)
+    unique_by_url = {}
+    discard_reasons = {
+        "duplicate_url": 0,
+        "noisy_hint": 0,
+    }
 
-    filtered = []
-    for i in imgs:
-        low = i.lower()
-        if any(x in low for x in [".svg", "logo", "avatar", "favicon", "icon"]):
+    for meta in candidates:
+        u = meta["url"]
+        if u in unique_by_url:
+            discard_reasons["duplicate_url"] += 1
             continue
-        filtered.append(i)
 
-    return filtered[:MAX_IMAGES_PER_SUSPECT_PAGE], html, content_type or "text/html"
+        noisy, reason = is_noisy_image_candidate(meta)
+        if noisy:
+            discard_reasons["noisy_hint"] += 1
+            continue
 
-def suspicious(text: str) -> list[str]:
+        unique_by_url[u] = meta
+
+    cleaned = list(unique_by_url.values())
+    cleaned.sort(key=score_candidate_priority, reverse=True)
+    cleaned = cleaned[:MAX_IMAGES_PER_SUSPECT_PAGE]
+
+    return cleaned, html, content_type or "text/html", page_context, discard_reasons
+
+def suspicious_links(text: str) -> list[str]:
     return [
         l for l in re.findall(r"https?://\S+", text)
         if any(x in l.lower() for x in ["mega", "drive", "telegram", "t.me"])
     ]
 
 # =========================
-# RSS
+# TEXTO / CONTEXTO
 # =========================
 
-def read_rss(feeds: list[str]) -> list[str]:
-    urls = []
-    for f in feeds:
-        d = feedparser.parse(f)
-        for e in d.entries:
-            if hasattr(e, "link"):
-                urls.append(unwrap_google_url(e.link))
-    urls = unique(urls)
-    log(f"Links coletados do RSS: {len(urls)}")
-    return urls
+def page_textual_suspicion_score(page_context: dict, ref: dict) -> float:
+    text = normalize_text(page_context.get("text", ""))
+    ref_tokens = ref.get("_tokens", set())
+
+    score = 0.0
+
+    for hint in TEXTUAL_SUSPICIOUS_HINTS:
+        if hint in text:
+            score += 1.2
+
+    if ref_tokens:
+        overlap = sum(1 for t in ref_tokens if t in text)
+        score += min(overlap * 3.0, 12.0)
+
+    return score
+
+def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> float:
+    boost = page_textual_suspicion_score(page_context, ref)
+
+    adjusted = raw_score + boost
+    adjusted = max(0.0, min(100.0, adjusted))
+    return adjusted
 
 # =========================
 # STATE
@@ -499,20 +758,70 @@ def save_state(state: dict) -> None:
     save_json(SEEN_FILE, state)
 
 # =========================
+# CONSOLIDAÇÃO
+# =========================
+
+def match_key(item: dict) -> tuple:
+    return (
+        item.get("page", ""),
+        item.get("image", ""),
+        item.get("product_url", "") or item.get("product", ""),
+    )
+
+def merge_match(existing: list[dict], new_match: dict, limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
+    grouped = {}
+    for item in list(existing or []) + [new_match]:
+        key = match_key(item)
+        current = grouped.get(key)
+        if current is None or float(item.get("score", 0)) > float(current.get("score", 0)):
+            grouped[key] = item
+
+    dedup = sorted(grouped.values(), key=lambda x: float(x.get("score", 0)), reverse=True)
+    return dedup[:limit]
+
+def sort_and_trim_matches(matches: list[dict], limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
+    grouped = {}
+    for item in matches or []:
+        key = match_key(item)
+        current = grouped.get(key)
+        if current is None or float(item.get("score", 0)) > float(current.get("score", 0)):
+            grouped[key] = item
+
+    out = sorted(grouped.values(), key=lambda x: float(x.get("score", 0)), reverse=True)
+    return out[:limit]
+
+def merge_alert(existing: list[dict], new_alert: dict) -> list[dict]:
+    grouped = {}
+    for item in list(existing or []) + [new_alert]:
+        key = match_key(item)
+        current = grouped.get(key)
+        if current is None or float(item.get("score", 0)) > float(current.get("score", 0)):
+            merged_links = sorted(set((current or {}).get("links", []) + item.get("links", [])))
+            grouped[key] = {
+                **item,
+                "links": merged_links
+            }
+
+    return sorted(grouped.values(), key=lambda x: float(x.get("score", 0)), reverse=True)
+
+# =========================
 # RELATÓRIOS
 # =========================
 
 def format_match_list(matches: list[dict]) -> str:
     if not matches:
-        return "Nenhum match relevante registrado."
+        return "Nenhum caso relevante registrado."
 
     lines = []
     for idx, m in enumerate(matches, start=1):
-        lines.append(f"{idx}. Score: {float(m.get('score', 0)):.1f}%")
+        lines.append(f"{idx}. Score ajustado: {float(m.get('score', 0)):.1f}%")
+        lines.append(f"   Score bruto: {float(m.get('raw_score', 0)):.1f}%")
         lines.append(f"   Página: {m.get('page', '')}")
-        lines.append(f"   Produto: {m.get('product', '')}")
+        lines.append(f"   Produto de referência: {m.get('product', '')}")
         lines.append(f"   Seu produto: {m.get('product_url', '')}")
         lines.append(f"   Imagem analisada: {m.get('image', '')}")
+        if m.get("page_title"):
+            lines.append(f"   Contexto da página: {truncate_text(m.get('page_title', ''))}")
     return "\n".join(lines)
 
 def build_report_body(title: str, weekly: dict) -> str:
@@ -522,24 +831,18 @@ def build_report_body(title: str, weekly: dict) -> str:
     top_scores = weekly.get("top_scores", [])
     top_matches = weekly.get("top_matches", [])
 
-    if alerts == 0:
-        body = (
-            f"{title}\n\n"
-            f"O agente avaliou {analyzed} links suspeitos e não identificou nenhuma pirataria "
-            f"com seus arquivos digitais neste período.\n\n"
-            f"O maior percentual de semelhança encontrado entre as imagens avaliadas foi de {best:.1f}%.\n"
-            f"Top 3 percentuais encontrados: {format_scores(top_scores)}\n\n"
-            f"Top matches detalhados:\n{format_match_list(top_matches)}\n"
-        )
-    else:
-        body = (
-            f"{title}\n\n"
-            f"O agente avaliou {analyzed} links suspeitos neste período.\n"
-            f"Foram gerados {alerts} alertas de possível semelhança com seus arquivos digitais.\n"
-            f"O maior percentual observado foi de {best:.1f}%.\n"
-            f"Top 3 percentuais encontrados: {format_scores(top_scores)}\n\n"
-            f"Top matches detalhados:\n{format_match_list(top_matches)}\n"
-        )
+    body = (
+        f"{title}\n\n"
+        f"Resumo:\n"
+        f"- Links analisados no período: {analyzed}\n"
+        f"- Casos enviados para revisão manual: {alerts}\n"
+        f"- Maior score ajustado observado: {best:.1f}%\n"
+        f"- Top scores ajustados: {format_scores(top_scores)}\n\n"
+        f"Observação importante:\n"
+        f"Este agente faz uma triagem automática de semelhança visual/contextual. "
+        f"Os resultados abaixo representam candidatos para revisão manual e não confirmação automática de cópia.\n\n"
+        f"Top matches detalhados:\n{format_match_list(top_matches)}\n"
+    )
 
     return body
 
@@ -552,7 +855,7 @@ def maybe_send_test_report(state: dict) -> None:
         state["weekly"],
     ) + "\nEste é um envio de teste.\nDepois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
 
-    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes (TESTE)", body)
+    send_email("Relatório Semanal - Monitoramento (TESTE)", body)
 
 def maybe_send_weekly_report(state: dict) -> dict:
     if now() - state["weekly"]["start"] < WEEKLY_REPORT_SECONDS:
@@ -563,9 +866,24 @@ def maybe_send_weekly_report(state: dict) -> dict:
         state["weekly"],
     )
 
-    send_email("Relatório Semanal - Monitoramento de Possíveis Fraudes", body)
+    send_email("Relatório Semanal - Monitoramento", body)
     state["weekly"] = build_default_weekly()
     return state
+
+# =========================
+# RSS
+# =========================
+
+def read_rss(feeds: list[str]) -> list[str]:
+    urls = []
+    for f in feeds:
+        d = feedparser.parse(f)
+        for e in d.entries:
+            if hasattr(e, "link"):
+                urls.append(unwrap_google_url(e.link))
+    urls = unique(urls)
+    log(f"Links coletados do RSS: {len(urls)}")
+    return urls
 
 # =========================
 # MAIN
@@ -592,18 +910,34 @@ def main():
 
     analyzed = 0
     pages_with_images = 0
+    image_candidates_total = 0
+    image_downloaded_ok = 0
     image_comparisons = 0
     alerts = []
     noisy_skipped = 0
+    already_seen_skipped = 0
+    whitelist_skipped = 0
+    pages_failed = 0
+    pages_without_images = 0
+
+    discard_stats = {
+        "duplicate_url": 0,
+        "noisy_hint": 0,
+        "download_error": 0,
+        "invalid_image": 0,
+        "extreme_ratio": 0,
+        "too_small": 0,
+    }
 
     for idx, url in enumerate(urls[:MAX_PAGES_PER_RUN], start=1):
         log(f"Processando página {idx}/{min(len(urls), MAX_PAGES_PER_RUN)}: {url}")
 
         if url in state["seen"]:
+            already_seen_skipped += 1
             continue
-        state["seen"].append(url)
 
         if is_whitelisted(url, whitelist):
+            whitelist_skipped += 1
             continue
 
         if is_noisy_domain(url):
@@ -611,97 +945,170 @@ def main():
             continue
 
         try:
-            imgs, html, content_type = extract_images(url)
-        except Exception:
+            imgs_meta, html, content_type, page_context, local_discards = extract_images(url)
+        except Exception as e:
+            pages_failed += 1
+            log(f"Erro ao extrair imagens da página: {url} | {e}")
             continue
 
+        if content_type == "fetch_error":
+            pages_failed += 1
+            log(f"Falha de fetch: {url}")
+            continue
+
+        for k, v in (local_discards or {}).items():
+            discard_stats[k] = discard_stats.get(k, 0) + v
+
+        # Só marca como visto após processar a página com sucesso
+        state["seen"].append(url)
         analyzed += 1
 
-        if imgs:
-            pages_with_images += 1
+        if not imgs_meta:
+            pages_without_images += 1
+            log("Nenhuma imagem candidata relevante extraída da página.")
+            continue
 
-        for im in imgs:
+        pages_with_images += 1
+        image_candidates_total += len(imgs_meta)
+
+        page_best_score = 0.0
+
+        for meta in imgs_meta:
+            im = meta["url"]
+
             try:
                 img_bytes = download(im)
                 pimg = pil_from_bytes(img_bytes)
-                if not is_valid_pil_image(pimg):
-                    continue
+                image_downloaded_ok += 1
             except Exception:
+                discard_stats["download_error"] += 1
                 continue
+
+            if not is_valid_pil_image(pimg):
+                discard_stats["invalid_image"] += 1
+                continue
+
+            ar = aspect_ratio(pimg)
+            if ar >= 4.8:
+                discard_stats["extreme_ratio"] += 1
+                continue
+
+            if min(pimg.size) < MIN_IMAGE_SIDE:
+                discard_stats["too_small"] += 1
+                continue
+
+            suspect_hashes = compute_hash_triplet(pimg)
 
             for r in refs:
                 image_comparisons += 1
 
                 try:
-                    score = hash_score(pimg, r)
+                    ref_hashes = (r["_ph"], r["_dh"], r["_wh"])
+                    raw_score = hash_score_from_triplets(suspect_hashes, ref_hashes)
+                    final_score = adjusted_confidence(raw_score, page_context, r)
                 except Exception:
                     continue
 
-                best = max(best, score)
-                top_scores = update_top(top_scores, score)
+                if final_score > page_best_score:
+                    page_best_score = final_score
+
+                best = max(best, final_score)
+                top_scores = update_top(top_scores, final_score, limit=TOP_SCORES_LIMIT)
+
+                if final_score < INITIAL_HASH_FILTER:
+                    continue
 
                 match_item = {
                     "page": url,
                     "product": get_ref_product_name(r),
                     "product_url": get_ref_product_url(r),
                     "image": im,
-                    "score": score,
+                    "score": final_score,
+                    "raw_score": raw_score,
+                    "page_title": page_context.get("text", ""),
                 }
                 top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
 
-                if score < INITIAL_HASH_FILTER:
-                    continue
-
-                if score >= ALERT_THRESHOLD_PERCENT:
-                    alerts.append({
+                if final_score >= REVIEW_THRESHOLD_PERCENT:
+                    alert_item = {
                         "page": url,
                         "product": get_ref_product_name(r),
                         "product_url": get_ref_product_url(r),
                         "image": im,
-                        "score": score,
-                        "links": suspicious(html),
-                    })
+                        "score": final_score,
+                        "raw_score": raw_score,
+                        "page_title": page_context.get("text", ""),
+                        "links": suspicious_links(html),
+                    }
+                    alerts = merge_alert(alerts, alert_item)
 
         log(
             f"Parcial -> páginas com imagens: {pages_with_images}, "
+            f"candidatas: {image_candidates_total}, "
             f"comparações: {image_comparisons}, "
-            f"melhor score: {best:.1f}%"
+            f"melhor score ajustado: {best:.1f}%, "
+            f"melhor score da página: {page_best_score:.1f}%"
         )
 
     weekly["analyzed"] += analyzed
     weekly["alerts"] += len(alerts)
-    weekly["max"] = best
-    weekly["top_scores"] = top_scores
-    weekly["top_matches"] = sort_and_trim_matches(top_matches, TOP_MATCHES_LIMIT)
+    weekly["max"] = max(float(weekly.get("max", 0.0)), best)
+    weekly["top_scores"] = sorted(
+        list(weekly.get("top_scores", [])) + top_scores,
+        reverse=True
+    )[:TOP_SCORES_LIMIT]
+    weekly["top_matches"] = sort_and_trim_matches(
+        list(weekly.get("top_matches", [])) + top_matches,
+        TOP_MATCHES_LIMIT
+    )
 
     log(f"Páginas analisadas: {analyzed}")
     log(f"Páginas ignoradas por domínio ruidoso: {noisy_skipped}")
-    log(f"Páginas com imagens extraídas: {pages_with_images}")
+    log(f"Páginas ignoradas por whitelist: {whitelist_skipped}")
+    log(f"Páginas já vistas: {already_seen_skipped}")
+    log(f"Páginas com falha: {pages_failed}")
+    log(f"Páginas sem imagens relevantes: {pages_without_images}")
+    log(f"Páginas com imagens relevantes: {pages_with_images}")
+    log(f"Imagens candidatas consideradas: {image_candidates_total}")
+    log(f"Imagens baixadas com sucesso: {image_downloaded_ok}")
     log(f"Comparações de imagem realizadas: {image_comparisons}")
-    log(f"Maior score nesta execução/semana: {best:.1f}%")
-    log(f"Top 3 scores da semana: {format_scores(top_scores)}")
+    log(f"Maior score ajustado nesta execução/semana: {best:.1f}%")
+    log(f"Top scores ajustados da semana: {format_scores(weekly['top_scores'])}")
+    log("Motivos de descarte de imagens:")
+    for k, v in sorted(discard_stats.items(), key=lambda x: x[0]):
+        log(f"- {k}: {v}")
+
     log("Top matches detalhados:")
     for line in format_match_list(weekly["top_matches"]).splitlines():
         log(line)
-    log(f"Alertas gerados (>= {ALERT_THRESHOLD_PERCENT}%): {len(alerts)}")
+
+    log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_PERCENT}%): {len(alerts)}")
 
     maybe_send_test_report(state)
 
     if alerts:
-        body = "Alertas de Possíveis Fraudes\n\n"
+        body = (
+            "Candidatos com maior semelhança para revisão manual\n\n"
+            "Observação: estes casos representam triagem automática. "
+            "Revise manualmente antes de considerar qualquer ação.\n\n"
+        )
+
         for a in alerts:
             body += f"Página suspeita: {a['page']}\n"
-            body += f"Produto parecido: {a['product']}\n"
+            body += f"Produto de referência: {a['product']}\n"
             body += f"Seu produto: {a['product_url']}\n"
             body += f"Imagem suspeita: {a['image']}\n"
-            body += f"Score de similaridade: {a['score']:.1f}%\n"
+            body += f"Score ajustado: {a['score']:.1f}%\n"
+            body += f"Score bruto: {a['raw_score']:.1f}%\n"
+            if a.get("page_title"):
+                body += f"Contexto da página: {truncate_text(a['page_title'])}\n"
             if a["links"]:
-                body += "Links suspeitos encontrados:\n"
+                body += "Links externos potencialmente suspeitos encontrados na página:\n"
                 for l in a["links"]:
                     body += f"- {l}\n"
             body += "\n"
 
-        send_email("Alertas de Possíveis Fraudes", body)
+        send_email("Candidatos para Revisão Manual", body)
 
     state = maybe_send_weekly_report(state)
     save_state(state)
