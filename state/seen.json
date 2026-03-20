@@ -8,63 +8,11 @@
     "https://www.arquivosdigitaisbygiovanna.com.br/produtos/artes-sublimacao-canecas-pascoa-crista-arquivo-digital/"
   ],
   "weekly": {
-    "start": 1773969372,
+    "start": 1773970016,
     "analyzed": 6,
     "alerts": 0,
-    "max": 66.66666666666667,
-    "top_scores": [
-      66.66666666666667,
-      65.625,
-      64.58333333333333,
-      64.0625,
-      64.0625
-    ],
-    "top_matches": [
-      {
-        "page": "https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul",
-        "product": "Kit Festa Cerejinha (Arquivo Digital)",
-        "product_url": "https://guilhermeangeli.com.br/produto/kit-festa-cerejinha-arquivo-digital/",
-        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/74830998/PATRULHA_20CANINA_20AZUL.png?1773860895",
-        "score": 66.66666666666667,
-        "raw_score": 66.66666666666667,
-        "page_title": "arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul"
-      },
-      {
-        "page": "https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul",
-        "product": "Kit Digital Dia dos Pais",
-        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-dia-dos-pais/",
-        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/74830998/PATRULHA_20CANINA_20AZUL.png?1773860895",
-        "score": 65.625,
-        "raw_score": 65.625,
-        "page_title": "arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul"
-      },
-      {
-        "page": "https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul",
-        "product": "4 Embalagens da Fazendinha",
-        "product_url": "https://guilhermeangeli.com.br/produto/arquivo-digital-4-embalagens-da-fazendinha/",
-        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/74830998/PATRULHA_20CANINA_20AZUL.png?1773860895",
-        "score": 64.58333333333333,
-        "raw_score": 64.58333333333333,
-        "page_title": "arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul"
-      },
-      {
-        "page": "https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul",
-        "product": "Páscoa Laranja 2026",
-        "product_url": "https://guilhermeangeli.com.br/produto/pascoa-laranja-2026/",
-        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/74830998/PATRULHA_20CANINA_20AZUL.png?1773860895",
-        "score": 64.0625,
-        "raw_score": 64.0625,
-        "page_title": "arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul"
-      },
-      {
-        "page": "https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul",
-        "product": "Ilustrações Fazendinha Cute",
-        "product_url": "https://guilhermeangeli.com.br/produto/arquivos-digitais-ilustracoes-fazendinha-cute/",
-        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/74830998/PATRULHA_20CANINA_20AZUL.png?1773860895",
-        "score": 64.0625,
-        "raw_score": 64.0625,
-        "page_title": "arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | arquivo páscoa caixa 3 ovos patrulha canina azul | https://www.benditoarquivo.com/arquivo-pascoa-caixa-3-ovos-patrulha-canina-azul"
-      }
-    ]
+    "max": 0.0,
+    "top_scores": [],
+    "top_matches": []
   }
 }
