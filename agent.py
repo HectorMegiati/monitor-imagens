@@ -18,10 +18,10 @@ import imagehash
 # =========================
 
 # Score mínimo para começar a considerar internamente um match
-INITIAL_HASH_FILTER = 45
+INITIAL_HASH_FILTER = 50
 
 # Score mínimo para enviar no e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 90
+REVIEW_THRESHOLD_PERCENT = 92
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
@@ -49,6 +49,12 @@ REQUEST_TIMEOUT = 12
 TOP_MATCHES_LIMIT = 5
 TOP_SCORES_LIMIT = 5
 
+# Regras de penalização / coerência
+GENERIC_MATCH_SPREAD_LIMIT = 3
+GENERIC_MATCH_SPREAD_PENALTY = 6.0
+NO_THEME_OVERLAP_PENALTY = 4.0
+LOW_THEME_OVERLAP_PENALTY = 2.0
+
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 # =========================
@@ -57,7 +63,7 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 EMAIL_TESTE = True
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -168,7 +174,6 @@ PRODUCT_POSITIVE_HINTS = [
     "woocommerce",
 ]
 
-# Tokens realmente úteis. Os genéricos serão excluídos.
 GENERIC_PRODUCT_TOKENS = {
     "kit",
     "digital",
@@ -196,6 +201,24 @@ GENERIC_PRODUCT_TOKENS = {
     "combo",
     "estampas",
     "arquivo-digital",
+    "embalagem",
+    "embalagens",
+    "illustration",
+    "illustrations",
+    "ilustracao",
+    "ilustrações",
+    "ilustracoes",
+    "cute",
+    "mod",
+    "modelo",
+    "personalizado",
+    "personalizada",
+    "personalizados",
+    "personalizadas",
+    "lembrancinha",
+    "lembrancinhas",
+    "festa",
+    "festas",
 }
 
 # =========================
@@ -291,16 +314,21 @@ def get_ref_product_name(ref: dict) -> str:
 def get_ref_product_url(ref: dict) -> str:
     return ref.get("url") or ref.get("product_url") or ""
 
+def get_product_theme_key(ref: dict) -> str:
+    return normalize_text(get_ref_product_name(ref))
+
+def tokenize_text(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9çáéíóúâêôãõ]+", normalize_text(text), flags=re.I)
+
 def product_name_tokens(name: str) -> set[str]:
-    text = normalize_text(name)
-    tokens = re.findall(r"[a-z0-9çáéíóúâêôãõ]+", text, flags=re.I)
+    tokens = tokenize_text(name)
 
     stop = {
         "de", "da", "do", "das", "dos", "para", "com", "sem", "em", "e", "a", "o", "os", "as",
         "mod", "modelo", "arquivo", "arquivos", "digital", "kit", "png", "arte", "artes",
         "produto", "produtos", "combo", "estampas", "papelaria", "mimos", "mimo", "caixa",
         "caixinhas", "sacolinha", "sacolinhas", "encadernação", "encadernacao", "adesivo",
-        "adesivos", "printable", "imprimir", "natal"
+        "adesivos", "printable", "imprimir", "natal", "pascoa", "páscoa", "dia", "dos",
     }
 
     cleaned = set()
@@ -436,6 +464,16 @@ def is_valid_pil_image(img: Image.Image) -> bool:
     except Exception:
         return False
 
+def image_area(img: Image.Image) -> int:
+    w, h = img.size
+    return w * h
+
+def aspect_ratio(img: Image.Image) -> float:
+    w, h = img.size
+    if h == 0 or w == 0:
+        return 999.0
+    return max(w / h, h / w)
+
 def compute_hash_triplet(img: Image.Image):
     return imagehash.phash(img), imagehash.dhash(img), imagehash.whash(img)
 
@@ -457,15 +495,81 @@ def hash_score_from_triplets(img_hashes, ref_hashes) -> float:
         + hash_distance_to_percent(d3)
     ) / 3.0
 
-def image_area(img: Image.Image) -> int:
+def resize_with_minimum(img: Image.Image, min_side: int = 256) -> Image.Image:
     w, h = img.size
-    return w * h
+    if min(w, h) >= min_side:
+        return img
 
-def aspect_ratio(img: Image.Image) -> float:
+    if w <= 0 or h <= 0:
+        return img
+
+    scale = min_side / float(min(w, h))
+    new_w = max(1, int(round(w * scale)))
+    new_h = max(1, int(round(h * scale)))
+    return img.resize((new_w, new_h), Image.LANCZOS)
+
+def center_crop(img: Image.Image, crop_ratio: float = 0.72) -> Image.Image:
     w, h = img.size
-    if h == 0 or w == 0:
-        return 999.0
-    return max(w / h, h / w)
+    new_w = max(1, int(w * crop_ratio))
+    new_h = max(1, int(h * crop_ratio))
+
+    left = max(0, (w - new_w) // 2)
+    top = max(0, (h - new_h) // 2)
+    right = min(w, left + new_w)
+    bottom = min(h, top + new_h)
+
+    return img.crop((left, top, right, bottom))
+
+def quadrant_crops(img: Image.Image, crop_ratio: float = 0.62) -> list[Image.Image]:
+    w, h = img.size
+    cw = max(1, int(w * crop_ratio))
+    ch = max(1, int(h * crop_ratio))
+
+    crops = []
+    positions = [
+        (0, 0),
+        (max(0, w - cw), 0),
+        (0, max(0, h - ch)),
+        (max(0, w - cw), max(0, h - ch)),
+    ]
+
+    for left, top in positions:
+        right = min(w, left + cw)
+        bottom = min(h, top + ch)
+        crops.append(img.crop((left, top, right, bottom)))
+
+    return crops
+
+def build_image_hash_views(img: Image.Image) -> dict:
+    img = resize_with_minimum(img, 256)
+
+    whole = compute_hash_triplet(img)
+    center = compute_hash_triplet(center_crop(img, 0.72))
+
+    quads = []
+    for q in quadrant_crops(img, 0.62):
+        quads.append(compute_hash_triplet(q))
+
+    return {
+        "whole": whole,
+        "center": center,
+        "quads": quads,
+    }
+
+def composite_similarity_score(suspect_views: dict, ref_views: dict) -> tuple[float, float, float]:
+    whole_score = hash_score_from_triplets(suspect_views["whole"], ref_views["whole"])
+    center_score = hash_score_from_triplets(suspect_views["center"], ref_views["center"])
+
+    quad_scores = []
+    for s_q in suspect_views["quads"]:
+        for r_q in ref_views["quads"]:
+            quad_scores.append(hash_score_from_triplets(s_q, r_q))
+
+    best_quad = max(quad_scores) if quad_scores else 0.0
+
+    # Peso maior para centro e imagem inteira.
+    final_raw = (whole_score * 0.40) + (center_score * 0.40) + (best_quad * 0.20)
+    return final_raw, whole_score, center_score
 
 def url_has_thumbnail_hint(url: str) -> bool:
     low = url.lower()
@@ -537,13 +641,25 @@ def build_refs() -> list[dict]:
                 if not is_valid_pil_image(pimg):
                     continue
 
-                ph, dh, wh = compute_hash_triplet(pimg)
+                views = build_image_hash_views(pimg)
+
                 refs.append({
                     "product": p.get("name", "(sem nome)"),
                     "url": p.get("permalink", ""),
-                    "phash": str(ph),
-                    "dhash": str(dh),
-                    "whash": str(wh),
+                    "whole_phash": str(views["whole"][0]),
+                    "whole_dhash": str(views["whole"][1]),
+                    "whole_whash": str(views["whole"][2]),
+                    "center_phash": str(views["center"][0]),
+                    "center_dhash": str(views["center"][1]),
+                    "center_whash": str(views["center"][2]),
+                    "quad_hashes": [
+                        {
+                            "phash": str(q[0]),
+                            "dhash": str(q[1]),
+                            "whash": str(q[2]),
+                        }
+                        for q in views["quads"]
+                    ],
                 })
             except Exception as e:
                 log(f"Falha ao criar referência do produto '{p.get('name', '(sem nome)')}': {e}")
@@ -555,13 +671,33 @@ def prepare_refs(refs: list[dict]) -> list[dict]:
     prepared = []
     for ref in refs:
         try:
-            prepared.append({
+            quad_views = []
+            for q in ref.get("quad_hashes", []):
+                quad_views.append((
+                    imagehash.hex_to_hash(q["phash"]),
+                    imagehash.hex_to_hash(q["dhash"]),
+                    imagehash.hex_to_hash(q["whash"]),
+                ))
+
+            item = {
                 **ref,
-                "_ph": imagehash.hex_to_hash(ref["phash"]),
-                "_dh": imagehash.hex_to_hash(ref["dhash"]),
-                "_wh": imagehash.hex_to_hash(ref["whash"]),
                 "_tokens": product_name_tokens(ref.get("product", "")),
-            })
+                "_theme_key": get_product_theme_key(ref),
+                "_views": {
+                    "whole": (
+                        imagehash.hex_to_hash(ref["whole_phash"]),
+                        imagehash.hex_to_hash(ref["whole_dhash"]),
+                        imagehash.hex_to_hash(ref["whole_whash"]),
+                    ),
+                    "center": (
+                        imagehash.hex_to_hash(ref["center_phash"]),
+                        imagehash.hex_to_hash(ref["center_dhash"]),
+                        imagehash.hex_to_hash(ref["center_whash"]),
+                    ),
+                    "quads": quad_views,
+                },
+            }
+            prepared.append(item)
         except Exception:
             continue
     return prepared
@@ -837,21 +973,22 @@ def page_specific_token_overlap(page_context: dict, ref: dict) -> int:
 
     return overlap
 
-def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> float:
-    """
-    Ajuste mínimo e conservador:
-    - não usa boost genérico por termos do nicho
-    - só dá pequeno ganho se houver coincidência de tokens específicos do nome do produto
-    """
+def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> tuple[float, int, float]:
     overlap = page_specific_token_overlap(page_context, ref)
 
     boost = 0.0
+    penalty = 0.0
+
     if overlap >= 1:
         boost += min(overlap * 1.5, 4.5)
+    elif ref.get("_tokens"):
+        penalty += NO_THEME_OVERLAP_PENALTY
+    else:
+        penalty += LOW_THEME_OVERLAP_PENALTY
 
-    adjusted = raw_score + boost
+    adjusted = raw_score + boost - penalty
     adjusted = max(0.0, min(100.0, adjusted))
-    return adjusted
+    return adjusted, overlap, penalty
 
 # =========================
 # STATE
@@ -943,7 +1080,12 @@ def format_match_list(matches: list[dict]) -> str:
     lines = []
     for idx, m in enumerate(matches, start=1):
         lines.append(f"{idx}. Score ajustado: {float(m.get('score', 0)):.1f}%")
-        lines.append(f"   Score bruto: {float(m.get('raw_score', 0)):.1f}%")
+        lines.append(f"   Score bruto composto: {float(m.get('raw_score', 0)):.1f}%")
+        lines.append(f"   Score imagem inteira: {float(m.get('whole_score', 0)):.1f}%")
+        lines.append(f"   Score recorte central: {float(m.get('center_score', 0)):.1f}%")
+        lines.append(f"   Sobreposição temática: {int(m.get('theme_overlap', 0))}")
+        lines.append(f"   Penalização temática: {float(m.get('theme_penalty', 0)):.1f}")
+        lines.append(f"   Penalização genérica: {float(m.get('generic_penalty', 0)):.1f}")
         lines.append(f"   Página: {m.get('page', '')}")
         lines.append(f"   Produto de referência: {m.get('product', '')}")
         lines.append(f"   Seu produto: {m.get('product_url', '')}")
@@ -1058,6 +1200,8 @@ def main():
         "thumbnail_hint": 0,
         "too_small": 0,
         "too_small_area": 0,
+        "generic_penalty_applied": 0,
+        "theme_penalty_applied": 0,
     }
 
     for idx, url in enumerate(urls[:MAX_PAGES_PER_RUN], start=1):
@@ -1096,7 +1240,6 @@ def main():
         for k, v in (local_discards or {}).items():
             discard_stats[k] = discard_stats.get(k, 0) + v
 
-        # Marca como visto apenas depois que a página foi processada com sucesso
         state["seen"].append(url)
         analyzed += 1
 
@@ -1145,17 +1288,61 @@ def main():
                 discard_stats["extreme_ratio"] += 1
                 continue
 
-            suspect_hashes = compute_hash_triplet(pimg)
+            suspect_views = build_image_hash_views(pimg)
+
+            per_ref_results = []
 
             for r in refs:
                 image_comparisons += 1
 
                 try:
-                    ref_hashes = (r["_ph"], r["_dh"], r["_wh"])
-                    raw_score = hash_score_from_triplets(suspect_hashes, ref_hashes)
-                    final_score = adjusted_confidence(raw_score, page_context, r)
+                    raw_score, whole_score, center_score = composite_similarity_score(
+                        suspect_views,
+                        r["_views"]
+                    )
+                    adjusted_base, theme_overlap, theme_penalty = adjusted_confidence(raw_score, page_context, r)
                 except Exception:
                     continue
+
+                per_ref_results.append({
+                    "ref": r,
+                    "raw_score": raw_score,
+                    "whole_score": whole_score,
+                    "center_score": center_score,
+                    "adjusted_base": adjusted_base,
+                    "theme_overlap": theme_overlap,
+                    "theme_penalty": theme_penalty,
+                })
+
+            if not per_ref_results:
+                continue
+
+            per_ref_results.sort(key=lambda x: float(x["adjusted_base"]), reverse=True)
+
+            strong_results = [x for x in per_ref_results if x["adjusted_base"] >= INITIAL_HASH_FILTER]
+            strong_theme_keys = set(
+                x["ref"].get("_theme_key", "")
+                for x in strong_results[:8]
+                if x["ref"].get("_theme_key", "")
+            )
+
+            generic_penalty = 0.0
+            if len(strong_theme_keys) >= GENERIC_MATCH_SPREAD_LIMIT:
+                generic_penalty = GENERIC_MATCH_SPREAD_PENALTY
+                discard_stats["generic_penalty_applied"] += 1
+
+            for item in per_ref_results:
+                r = item["ref"]
+                raw_score = item["raw_score"]
+                whole_score = item["whole_score"]
+                center_score = item["center_score"]
+                theme_overlap = item["theme_overlap"]
+                theme_penalty = item["theme_penalty"]
+
+                final_score = max(0.0, min(100.0, item["adjusted_base"] - generic_penalty))
+
+                if theme_penalty > 0:
+                    discard_stats["theme_penalty_applied"] += 1
 
                 if final_score > page_best_score:
                     page_best_score = final_score
@@ -1166,7 +1353,6 @@ def main():
                 if final_score < INITIAL_HASH_FILTER:
                     continue
 
-                # Só registra top match se a imagem passou por todos os filtros mais duros
                 match_item = {
                     "page": url,
                     "product": get_ref_product_name(r),
@@ -1174,6 +1360,11 @@ def main():
                     "image": im,
                     "score": final_score,
                     "raw_score": raw_score,
+                    "whole_score": whole_score,
+                    "center_score": center_score,
+                    "theme_overlap": theme_overlap,
+                    "theme_penalty": theme_penalty,
+                    "generic_penalty": generic_penalty,
                     "page_title": page_context.get("text", ""),
                 }
                 top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
@@ -1186,6 +1377,11 @@ def main():
                         "image": im,
                         "score": final_score,
                         "raw_score": raw_score,
+                        "whole_score": whole_score,
+                        "center_score": center_score,
+                        "theme_overlap": theme_overlap,
+                        "theme_penalty": theme_penalty,
+                        "generic_penalty": generic_penalty,
                         "page_title": page_context.get("text", ""),
                         "links": suspicious_links(html),
                     }
@@ -1249,7 +1445,12 @@ def main():
             body += f"Seu produto: {a['product_url']}\n"
             body += f"Imagem suspeita: {a['image']}\n"
             body += f"Score ajustado: {a['score']:.1f}%\n"
-            body += f"Score bruto: {a['raw_score']:.1f}%\n"
+            body += f"Score bruto composto: {a['raw_score']:.1f}%\n"
+            body += f"Score imagem inteira: {a['whole_score']:.1f}%\n"
+            body += f"Score recorte central: {a['center_score']:.1f}%\n"
+            body += f"Sobreposição temática: {a['theme_overlap']}\n"
+            body += f"Penalização temática: {a['theme_penalty']:.1f}\n"
+            body += f"Penalização genérica: {a['generic_penalty']:.1f}\n"
             if a.get("page_title"):
                 body += f"Contexto da página: {truncate_text(a['page_title'])}\n"
             if a["links"]:
