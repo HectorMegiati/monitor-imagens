@@ -63,7 +63,7 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 EMAIL_TESTE = True
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = False
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
