@@ -17,31 +17,32 @@ import imagehash
 # CONFIGURAÇÕES
 # =========================
 
-# Score mínimo para considerar que vale registrar internamente
-INITIAL_HASH_FILTER = 35
+# Score mínimo para começar a considerar internamente um match
+INITIAL_HASH_FILTER = 45
 
-# Score mínimo para ir ao e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 88
+# Score mínimo para enviar no e-mail de revisão manual
+REVIEW_THRESHOLD_PERCENT = 90
 
-# Quantidade de imagens de cada produto WooCommerce usadas como referência
+# Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
 
-# Quantidade máxima de imagens de uma página suspeita a comparar
-MAX_IMAGES_PER_SUSPECT_PAGE = 6
+# Quantidade máxima de imagens candidatas por página suspeita
+MAX_IMAGES_PER_SUSPECT_PAGE = 4
 
 # Quantidade máxima de páginas por execução
 MAX_PAGES_PER_RUN = 15
 
-# Atualização do cache de referências
+# Atualização do cache das referências
 CACHE_REFRESH_SECONDS = 48 * 60 * 60
 
 # Relatório semanal
 WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 
-# Tamanho mínimo de imagem
-MIN_IMAGE_SIDE = 80
+# Filtros mínimos de imagem
+MIN_IMAGE_SIDE = 220
+MIN_IMAGE_AREA = 120000  # ex.: 400x300 = 120000
 
-# Timeouts
+# Timeout das requisições
 REQUEST_TIMEOUT = 12
 
 # Limites de ranking
@@ -80,6 +81,33 @@ NOISY_DOMAINS = [
 ]
 
 # =========================
+# PÁGINAS / URLS RUIDOSAS
+# =========================
+
+NOISY_PAGE_HINTS = [
+    "/category/",
+    "/categoria/",
+    "/tag/",
+    "/tags/",
+    "/pin/",
+    "/search",
+    "/busca",
+    "/noticias/",
+    "/noticia/",
+    "/blog/",
+    "/news/",
+]
+
+NOISY_QUERY_HINTS = [
+    "page=",
+    "pagina=",
+    "limite=",
+    "sort=",
+    "order=",
+    "filter=",
+]
+
+# =========================
 # FILTROS DE IMAGEM / LAYOUT
 # =========================
 
@@ -94,14 +122,37 @@ NOISY_IMAGE_HINTS = [
     "icon",
     "avatar",
     "profile",
-    "thumb",
-    "thumbnail",
     "sprite",
     "placeholder",
     "banner",
     "ads",
     "pixel",
     "loader",
+    "watermark",
+    "gravatar",
+]
+
+THUMBNAIL_HINTS = [
+    "thumb",
+    "thumbnail",
+    "small",
+    "mini",
+    "resize",
+    "resized",
+    "crop",
+    "cropped",
+    "fit-in",
+    "fitin",
+    "140x140",
+    "150x150",
+    "160x160",
+    "180x180",
+    "200x200",
+    "220x220",
+    "240x240",
+    "250x250",
+    "300x300",
+    "_rs",
 ]
 
 PRODUCT_POSITIVE_HINTS = [
@@ -117,24 +168,35 @@ PRODUCT_POSITIVE_HINTS = [
     "woocommerce",
 ]
 
-TEXTUAL_SUSPICIOUS_HINTS = [
-    "kit digital",
-    "arquivo digital",
+# Tokens realmente úteis. Os genéricos serão excluídos.
+GENERIC_PRODUCT_TOKENS = {
+    "kit",
+    "digital",
     "arquivo",
+    "arquivos",
     "png",
-    "imprimir",
-    "impressao",
-    "impressão",
-    "silhouette",
-    "studio",
-    "printable",
+    "arte",
+    "artes",
+    "produto",
+    "produtos",
     "papelaria",
     "mimo",
-    "lembrancinha",
-    "adesivo",
+    "mimos",
     "caixa",
+    "caixinhas",
+    "sacolinha",
+    "sacolinhas",
     "topper",
-]
+    "adesivo",
+    "adesivos",
+    "imprimir",
+    "printable",
+    "encadernação",
+    "encadernacao",
+    "combo",
+    "estampas",
+    "arquivo-digital",
+}
 
 # =========================
 # ENV
@@ -232,11 +294,26 @@ def get_ref_product_url(ref: dict) -> str:
 def product_name_tokens(name: str) -> set[str]:
     text = normalize_text(name)
     tokens = re.findall(r"[a-z0-9çáéíóúâêôãõ]+", text, flags=re.I)
+
     stop = {
-        "de", "da", "do", "das", "dos", "para", "com", "em", "e", "a", "o",
-        "kit", "digital", "arquivo", "png", "arte", "artes"
+        "de", "da", "do", "das", "dos", "para", "com", "sem", "em", "e", "a", "o", "os", "as",
+        "mod", "modelo", "arquivo", "arquivos", "digital", "kit", "png", "arte", "artes",
+        "produto", "produtos", "combo", "estampas", "papelaria", "mimos", "mimo", "caixa",
+        "caixinhas", "sacolinha", "sacolinhas", "encadernação", "encadernacao", "adesivo",
+        "adesivos", "printable", "imprimir", "natal"
     }
-    return {t for t in tokens if len(t) >= 4 and t not in stop}
+
+    cleaned = set()
+    for token in tokens:
+        if len(token) < 4:
+            continue
+        if token in stop:
+            continue
+        if token in GENERIC_PRODUCT_TOKENS:
+            continue
+        cleaned.add(token)
+
+    return cleaned
 
 # =========================
 # ESTADO SEMANAL
@@ -279,6 +356,19 @@ def is_noisy_domain(url: str) -> bool:
         if domain_matches(d, nd):
             return True
     return False
+
+def is_noisy_page_url(url: str) -> tuple[bool, str]:
+    low = url.lower()
+
+    for hint in NOISY_PAGE_HINTS:
+        if hint in low:
+            return True, f"page_hint:{hint}"
+
+    for hint in NOISY_QUERY_HINTS:
+        if hint in low:
+            return True, f"query_hint:{hint}"
+
+    return False, ""
 
 # =========================
 # GOOGLE URL UNWRAP
@@ -342,7 +432,7 @@ def pil_from_bytes(b: bytes) -> Image.Image:
 def is_valid_pil_image(img: Image.Image) -> bool:
     try:
         w, h = img.size
-        return w >= MIN_IMAGE_SIDE and h >= MIN_IMAGE_SIDE
+        return w >= MIN_IMAGE_SIDE and h >= MIN_IMAGE_SIDE and (w * h) >= MIN_IMAGE_AREA
     except Exception:
         return False
 
@@ -373,9 +463,27 @@ def image_area(img: Image.Image) -> int:
 
 def aspect_ratio(img: Image.Image) -> float:
     w, h = img.size
-    if h == 0:
+    if h == 0 or w == 0:
         return 999.0
     return max(w / h, h / w)
+
+def url_has_thumbnail_hint(url: str) -> bool:
+    low = url.lower()
+    return any(hint in low for hint in THUMBNAIL_HINTS)
+
+def is_probable_preview_or_thumbnail_url(url: str) -> bool:
+    low = url.lower()
+
+    if url_has_thumbnail_hint(low):
+        return True
+
+    if re.search(r"/\d{2,4}x\d{2,4}\b", low):
+        return True
+
+    if re.search(r"[_-]\d{2,4}x\d{2,4}\b", low):
+        return True
+
+    return False
 
 # =========================
 # WOO
@@ -561,7 +669,6 @@ def is_noisy_image_candidate(meta: dict) -> tuple[bool, str]:
     url = (meta.get("url") or "").lower()
     attrs = (meta.get("attrs") or "").lower()
     parent = (meta.get("parent") or "").lower()
-
     joined = f"{url} {attrs} {parent}"
 
     for hint in NOISY_IMAGE_HINTS:
@@ -571,13 +678,18 @@ def is_noisy_image_candidate(meta: dict) -> tuple[bool, str]:
     if any(x in url for x in [".svg", "favicon", "gravatar"]):
         return True, "url_noise"
 
+    if is_probable_preview_or_thumbnail_url(url):
+        return True, "thumbnail_hint"
+
     width = meta.get("width")
     height = meta.get("height")
     if width and height:
         if width < MIN_IMAGE_SIDE or height < MIN_IMAGE_SIDE:
             return True, "tag_too_small"
+        if (width * height) < MIN_IMAGE_AREA:
+            return True, "tag_too_small_area"
         ratio = max(width / max(height, 1), height / max(width, 1))
-        if ratio >= 4.8:
+        if ratio >= 4.5:
             return True, "tag_extreme_ratio"
 
     return False, ""
@@ -596,12 +708,17 @@ def score_candidate_priority(meta: dict) -> int:
         score += 2
     if "woocommerce" in joined:
         score += 2
+    if "main" in joined:
+        score += 1
+    if "featured" in joined:
+        score += 1
 
     return score
 
 def extract_page_context(soup: BeautifulSoup, final_url: str) -> dict:
     title = normalize_text(soup.title.get_text(" ", strip=True) if soup.title else "")
-    h1 = normalize_text(soup.find("h1").get_text(" ", strip=True) if soup.find("h1") else "")
+    h1_tag = soup.find("h1")
+    h1 = normalize_text(h1_tag.get_text(" ", strip=True) if h1_tag else "")
     og_title_tag = soup.find("meta", property="og:title")
     og_title = normalize_text(og_title_tag.get("content", "") if og_title_tag else "")
 
@@ -671,6 +788,7 @@ def extract_images(url: str):
     discard_reasons = {
         "duplicate_url": 0,
         "noisy_hint": 0,
+        "thumbnail_hint": 0,
     }
 
     for meta in candidates:
@@ -681,7 +799,10 @@ def extract_images(url: str):
 
         noisy, reason = is_noisy_image_candidate(meta)
         if noisy:
-            discard_reasons["noisy_hint"] += 1
+            if reason == "thumbnail_hint":
+                discard_reasons["thumbnail_hint"] += 1
+            else:
+                discard_reasons["noisy_hint"] += 1
             continue
 
         unique_by_url[u] = meta
@@ -702,24 +823,31 @@ def suspicious_links(text: str) -> list[str]:
 # TEXTO / CONTEXTO
 # =========================
 
-def page_textual_suspicion_score(page_context: dict, ref: dict) -> float:
+def page_specific_token_overlap(page_context: dict, ref: dict) -> int:
     text = normalize_text(page_context.get("text", ""))
     ref_tokens = ref.get("_tokens", set())
 
-    score = 0.0
+    if not ref_tokens:
+        return 0
 
-    for hint in TEXTUAL_SUSPICIOUS_HINTS:
-        if hint in text:
-            score += 1.2
+    overlap = 0
+    for token in ref_tokens:
+        if token in text:
+            overlap += 1
 
-    if ref_tokens:
-        overlap = sum(1 for t in ref_tokens if t in text)
-        score += min(overlap * 3.0, 12.0)
-
-    return score
+    return overlap
 
 def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> float:
-    boost = page_textual_suspicion_score(page_context, ref)
+    """
+    Ajuste mínimo e conservador:
+    - não usa boost genérico por termos do nicho
+    - só dá pequeno ganho se houver coincidência de tokens específicos do nome do produto
+    """
+    overlap = page_specific_token_overlap(page_context, ref)
+
+    boost = 0.0
+    if overlap >= 1:
+        boost += min(overlap * 1.5, 4.5)
 
     adjusted = raw_score + boost
     adjusted = max(0.0, min(100.0, adjusted))
@@ -839,7 +967,7 @@ def build_report_body(title: str, weekly: dict) -> str:
         f"- Maior score ajustado observado: {best:.1f}%\n"
         f"- Top scores ajustados: {format_scores(top_scores)}\n\n"
         f"Observação importante:\n"
-        f"Este agente faz uma triagem automática de semelhança visual/contextual. "
+        f"Este agente faz uma triagem automática de semelhança visual. "
         f"Os resultados abaixo representam candidatos para revisão manual e não confirmação automática de cópia.\n\n"
         f"Top matches detalhados:\n{format_match_list(top_matches)}\n"
     )
@@ -915,18 +1043,21 @@ def main():
     image_comparisons = 0
     alerts = []
     noisy_skipped = 0
+    noisy_page_skipped = 0
     already_seen_skipped = 0
     whitelist_skipped = 0
     pages_failed = 0
     pages_without_images = 0
 
     discard_stats = {
-        "duplicate_url": 0,
-        "noisy_hint": 0,
         "download_error": 0,
-        "invalid_image": 0,
+        "duplicate_url": 0,
         "extreme_ratio": 0,
+        "invalid_image": 0,
+        "noisy_hint": 0,
+        "thumbnail_hint": 0,
         "too_small": 0,
+        "too_small_area": 0,
     }
 
     for idx, url in enumerate(urls[:MAX_PAGES_PER_RUN], start=1):
@@ -944,6 +1075,12 @@ def main():
             noisy_skipped += 1
             continue
 
+        noisy_page, noisy_page_reason = is_noisy_page_url(url)
+        if noisy_page:
+            noisy_page_skipped += 1
+            log(f"Página ignorada por perfil ruidoso: {noisy_page_reason}")
+            continue
+
         try:
             imgs_meta, html, content_type, page_context, local_discards = extract_images(url)
         except Exception as e:
@@ -959,7 +1096,7 @@ def main():
         for k, v in (local_discards or {}).items():
             discard_stats[k] = discard_stats.get(k, 0) + v
 
-        # Só marca como visto após processar a página com sucesso
+        # Marca como visto apenas depois que a página foi processada com sucesso
         state["seen"].append(url)
         analyzed += 1
 
@@ -976,6 +1113,10 @@ def main():
         for meta in imgs_meta:
             im = meta["url"]
 
+            if is_probable_preview_or_thumbnail_url(im):
+                discard_stats["thumbnail_hint"] += 1
+                continue
+
             try:
                 img_bytes = download(im)
                 pimg = pil_from_bytes(img_bytes)
@@ -984,17 +1125,24 @@ def main():
                 discard_stats["download_error"] += 1
                 continue
 
+            w, h = pimg.size
+            area = w * h
+
+            if w < MIN_IMAGE_SIDE or h < MIN_IMAGE_SIDE:
+                discard_stats["too_small"] += 1
+                continue
+
+            if area < MIN_IMAGE_AREA:
+                discard_stats["too_small_area"] += 1
+                continue
+
             if not is_valid_pil_image(pimg):
                 discard_stats["invalid_image"] += 1
                 continue
 
             ar = aspect_ratio(pimg)
-            if ar >= 4.8:
+            if ar >= 4.5:
                 discard_stats["extreme_ratio"] += 1
-                continue
-
-            if min(pimg.size) < MIN_IMAGE_SIDE:
-                discard_stats["too_small"] += 1
                 continue
 
             suspect_hashes = compute_hash_triplet(pimg)
@@ -1018,6 +1166,7 @@ def main():
                 if final_score < INITIAL_HASH_FILTER:
                     continue
 
+                # Só registra top match se a imagem passou por todos os filtros mais duros
                 match_item = {
                     "page": url,
                     "product": get_ref_product_name(r),
@@ -1064,6 +1213,7 @@ def main():
 
     log(f"Páginas analisadas: {analyzed}")
     log(f"Páginas ignoradas por domínio ruidoso: {noisy_skipped}")
+    log(f"Páginas ignoradas por perfil de página ruidosa: {noisy_page_skipped}")
     log(f"Páginas ignoradas por whitelist: {whitelist_skipped}")
     log(f"Páginas já vistas: {already_seen_skipped}")
     log(f"Páginas com falha: {pages_failed}")
