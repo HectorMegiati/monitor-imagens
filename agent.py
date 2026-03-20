@@ -131,6 +131,18 @@ def format_scores(scores: list[float] | None) -> str:
         return "Nenhum"
     return ", ".join(f"{s:.1f}%" for s in scores)
 
+def update_top(scores: list[float] | None, new_score: float, limit: int = 3) -> list[float]:
+    values = list(scores or [])
+    values.append(float(new_score))
+    values = sorted(values, reverse=True)
+    return values[:limit]
+
+def get_ref_product_name(ref: dict) -> str:
+    return ref.get("product") or ref.get("product_name") or "(sem nome)"
+
+def get_ref_product_url(ref: dict) -> str:
+    return ref.get("url") or ref.get("product_url") or ""
+
 def safe_domain(url: str) -> str:
     try:
         d = urlparse(url).netloc.lower()
@@ -141,12 +153,6 @@ def safe_domain(url: str) -> str:
 def domain_matches(domain: str, pattern: str) -> bool:
     return domain == pattern or domain.endswith("." + pattern)
 
-def get_ref_product_name(ref: dict) -> str:
-    return ref.get("product") or ref.get("product_name") or "(sem nome)"
-
-def get_ref_product_url(ref: dict) -> str:
-    return ref.get("url") or ref.get("product_url") or ""
-
 def sort_and_trim_matches(matches: list[dict], limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
     sorted_matches = sorted(matches, key=lambda x: float(x.get("score", 0)), reverse=True)
     return sorted_matches[:limit]
@@ -154,6 +160,7 @@ def sort_and_trim_matches(matches: list[dict], limit: int = TOP_MATCHES_LIMIT) -
 def merge_match(existing: list[dict], new_match: dict, limit: int = TOP_MATCHES_LIMIT) -> list[dict]:
     combined = list(existing or [])
     combined.append(new_match)
+
     dedup = []
     seen_keys = set()
 
@@ -483,7 +490,6 @@ def load_state() -> dict:
     weekly.setdefault("top_scores", [])
     weekly.setdefault("top_matches", [])
 
-    # compatibilidade com formatos anteriores
     if "top" in weekly and not weekly.get("top_scores"):
         weekly["top_scores"] = weekly["top"]
 
