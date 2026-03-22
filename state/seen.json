@@ -1,21 +1,94 @@
 {
   "seen": [
     "https://www.mercadolivre.com.br/vetor-gabarito-caixa-de-papelo-embalagem-cnc/p/MLB2070998903",
-    "https://regiaoemdestake.com.br/pascoa-solidaria-mobiliza-doacoes-e-busca-levar-alegria-a-criancas-em-sao-carlos/",
-    "https://epgrupo.com.br/hello-kitty-e-kuromi-ganham-ovos-de-pascoa-exclusivos-em-parceria-com-americanas-e-ri-happy/",
-    "https://epgrupo.com.br/lider-brinquedos-apresenta-o-brinquedo-no-ovo-com-a-chegada-da-pascoa/",
-    "https://horadafesta.com.br/adesivos-redondo-para-decoracao-de-festas-infantis-e-mimos-decorativos-coelhinho-da-pascoa-papelaria-criativa-20-imagens-png/",
-    "https://epgrupo.com.br/maria-clara-jp-lancam-ovo-de-pascoa-com-miniaturas-sortidas-dos-personagens/",
-    "https://epgrupo.com.br/enaldinho-lanca-ovos-de-pascoa-com-brindes-interativos-inspirados-no-universo-do-canal/",
-    "https://epgrupo.com.br/top-cau-apresenta-ovos-de-pascoa-inspirados-em-ben-10/",
-    "https://epgrupo.com.br/galinha-pintadinha-expande-presenca-no-varejo-com-ovo-de-pascoa-tematico-para-2026/"
+    "https://www.ilustracin.com.br/produto/colecao-digital-dia-das-maes-2026/",
+    "https://www.youtube.com/shorts/u9KLeVg35Vw",
+    "https://nickdesigndigital.com/loja/mini-kit-digital-de-pascoa-vol-1/",
+    "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
   ],
   "weekly": {
-    "start": 1774101280,
-    "analyzed": 9,
+    "start": 1774156351,
+    "analyzed": 5,
     "alerts": 0,
-    "max": 0.0,
-    "top_scores": [],
-    "top_matches": []
+    "max": 58.9375,
+    "top_scores": [
+      58.9375,
+      58.83333333333334,
+      54.66666666666667,
+      54.66666666666667,
+      54.56250000000001
+    ],
+    "top_matches": [
+      {
+        "page": "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/",
+        "product": "Arquivos Digitais – Miolos Safari Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-turma-safari/",
+        "image": "https://acdn-us.mitiendanube.com/stores/004/199/459/products/untitled-design-3aa066d704c605277217740208928158-480-0.webp",
+        "score": 58.9375,
+        "raw_score": 63.4375,
+        "whole_score": 64.0625,
+        "center_score": 62.5,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
+      },
+      {
+        "page": "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/",
+        "product": "Arquivos Digitais – Miolos Safari Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-turma-safari/",
+        "image": "http://acdn-us.mitiendanube.com/stores/004/199/459/products/untitled-design-3aa066d704c605277217740208928158-640-0.webp",
+        "score": 58.83333333333334,
+        "raw_score": 63.333333333333336,
+        "whole_score": 64.0625,
+        "center_score": 62.5,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
+      },
+      {
+        "page": "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/",
+        "product": "Arquivos Digitais – Miolos Zebrinha Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-zebrinha-cute/",
+        "image": "https://acdn-us.mitiendanube.com/stores/004/199/459/products/untitled-design-3aa066d704c605277217740208928158-480-0.webp",
+        "score": 54.66666666666667,
+        "raw_score": 59.16666666666667,
+        "whole_score": 57.291666666666664,
+        "center_score": 59.375,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
+      },
+      {
+        "page": "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/",
+        "product": "Arquivos Digitais – Miolos Leão Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-leao-cute/",
+        "image": "https://acdn-us.mitiendanube.com/stores/004/199/459/products/untitled-design-3aa066d704c605277217740208928158-480-0.webp",
+        "score": 54.66666666666667,
+        "raw_score": 59.16666666666667,
+        "whole_score": 57.8125,
+        "center_score": 57.291666666666664,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
+      },
+      {
+        "page": "https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/",
+        "product": "Arquivos Digitais – Miolos Zebrinha Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-zebrinha-cute/",
+        "image": "http://acdn-us.mitiendanube.com/stores/004/199/459/products/untitled-design-3aa066d704c605277217740208928158-640-0.webp",
+        "score": 54.56250000000001,
+        "raw_score": 59.06250000000001,
+        "whole_score": 57.291666666666664,
+        "center_score": 59.375,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | coletiva completa a verdadeira páscoa 2026 | https://nogridarquivosdigitais.com.br/produtos/coletiva-completa-a-verdadeira-pascoa-2026-7q5lm/"
+      }
+    ]
   }
 }
