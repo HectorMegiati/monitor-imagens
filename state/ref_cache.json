@@ -1,6 +1,102 @@
 {
-  "last": 1774367468,
+  "last": 1774540911,
   "refs": [
+    {
+      "product": "",
+      "url": "https://guilhermeangeli.com.br/produto/1685/",
+      "whole_phash": "acdaa747da25d064",
+      "whole_dhash": "8e929633b5220686",
+      "whole_whash": "ffffdb9900020383",
+      "center_phash": "acdca3d2229af52c",
+      "center_dhash": "3333323137244b4b",
+      "center_whash": "ffff9b1890f40101",
+      "quad_hashes": [
+        {
+          "phash": "f4c95936c49c3366",
+          "dhash": "e4c3cee6cc0cac8c",
+          "whash": "f8f8fff666060600"
+        },
+        {
+          "phash": "b0971cd399609f39",
+          "dhash": "98a49c9899939715",
+          "whash": "1e16efcfcfe14100"
+        },
+        {
+          "phash": "f6b4a65ba8c06167",
+          "dhash": "0cac8ca459496847",
+          "whash": "e7c6e4ff800020ff"
+        },
+        {
+          "phash": "b2e8e937c4db1b10",
+          "dhash": "939795204c1e1ccc",
+          "whash": "ffc101f0060707ff"
+        }
+      ]
+    },
+    {
+      "product": "",
+      "url": "https://guilhermeangeli.com.br/produto/1685/",
+      "whole_phash": "cb4eb470f895d191",
+      "whole_dhash": "45455361d192961e",
+      "whole_whash": "e4313930e0f01fdf",
+      "center_phash": "c846be7f2466342d",
+      "center_dhash": "a4a981c1901103b3",
+      "center_whash": "f0fc7070c8d0f11f",
+      "quad_hashes": [
+        {
+          "phash": "9f5fe0b8a18fc1c0",
+          "dhash": "2070606f693036d6",
+          "whash": "f880bcbf988e1a72"
+        },
+        {
+          "phash": "ea9d1197c7c59898",
+          "dhash": "9a1333c74b018189",
+          "whash": "ff8181f1e1e1e161"
+        },
+        {
+          "phash": "a45c3e1eda25e545",
+          "dhash": "3034d6c6c0d64647",
+          "whash": "8e1e72fa780303e7"
+        },
+        {
+          "phash": "e26a8a957f488937",
+          "dhash": "0181898d4c9ecacc",
+          "whash": "c1c14140067f7f7f"
+        }
+      ]
+    },
+    {
+      "product": "",
+      "url": "https://guilhermeangeli.com.br/produto/1685/",
+      "whole_phash": "9fc6b158e2e14be0",
+      "whole_dhash": "5466676b61701e1e",
+      "whole_whash": "bf17333310180fcf",
+      "center_phash": "84e5b91cbf18552e",
+      "center_dhash": "e6e7efc9e5e4b13b",
+      "center_whash": "33737175341c1d0f",
+      "quad_hashes": [
+        {
+          "phash": "9eece1c9c2c1e354",
+          "dhash": "266c3c696979382c",
+          "whash": "fe868e9c9c9d0e06"
+        },
+        {
+          "phash": "ba9144875f97a338",
+          "dhash": "98b0ba39396d2521",
+          "whash": "5edecf8f81a19190"
+        },
+        {
+          "phash": "be1ec94dbe0fc060",
+          "dhash": "79392c2c2e864b4f",
+          "whash": "9d8f0e87870301ff"
+        },
+        {
+          "phash": "866a9f97600ff834",
+          "dhash": "6d25210384ce4ecc",
+          "whash": "819190e0466f3f7f"
+        }
+      ]
+    },
     {
       "product": "Pascoa Azul 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-azul-2026/",
