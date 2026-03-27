@@ -37,21 +37,51 @@
     "https://www.jornale.com.br/post/feira-de-páscoa-da-economia-solidária-movimenta-o-calçadão-da-rua-xv-a-partir-desta-sexta-feira-27",
     "https://www.mercadolivre.com.br/sacolinha-personalizada-ursinho-carinhosos-arquivo-digital/up/MLBU3075408820",
     "https://www.mmartan.com.br/kit-capa-de-edredom-estampa-digital-shiny-100-algodao-porto-pr-24082-dvnsg-porp21az-p219224",
-    "https://www.docesdesenhos.com/shop/produto/arte-camisa-professora-de-biologia-estampa-fofa-modelo-02-46498"
+    "https://www.docesdesenhos.com/shop/produto/arte-camisa-professora-de-biologia-estampa-fofa-modelo-02-46498",
+    "https://arquivosdigitaisprontos.com/shop/kits-digitais/papeis-e-elementos/kit-digital-escolar-stitch/",
+    "https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/"
   ],
   "weekly": {
     "start": 1774187736,
-    "analyzed": 38,
+    "analyzed": 40,
     "alerts": 0,
-    "max": 60.1875,
+    "max": 61.22916666666667,
     "top_scores": [
+      61.22916666666667,
+      61.22916666666667,
       60.1875,
       60.1875,
-      60.1875,
-      60.1875,
-      57.166666666666664
+      60.1875
     ],
     "top_matches": [
+      {
+        "page": "https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/",
+        "product": "Arquivos Digitais – Miolos Safari Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-turma-safari/",
+        "image": "https://acdn-us.mitiendanube.com/stores/006/893/246/products/freizinho-542226ec6162a9da8117730586793229-480-0.webp",
+        "score": 61.22916666666667,
+        "raw_score": 65.72916666666667,
+        "whole_score": 66.66666666666667,
+        "center_score": 66.66666666666667,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "frei gilson - kits digitais - loja de arquivos | frei gilson - kits digitais | frei gilson - kits digitais | https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/"
+      },
+      {
+        "page": "https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/",
+        "product": "Arquivos Digitais – Miolos Safari Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-turma-safari/",
+        "image": "http://acdn-us.mitiendanube.com/stores/006/893/246/products/freizinho-542226ec6162a9da8117730586793229-640-0.webp",
+        "score": 61.22916666666667,
+        "raw_score": 65.72916666666667,
+        "whole_score": 66.66666666666667,
+        "center_score": 66.66666666666667,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 6.0,
+        "page_title": "frei gilson - kits digitais - loja de arquivos | frei gilson - kits digitais | frei gilson - kits digitais | https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/"
+      },
       {
         "page": "https://loja.infinitepay.io/mkcriativosdigitais/sam5810-livrinho-pascoa---coelhinho-ton---pdf---ar",
         "product": "Papéis Digitais Natalinos",
@@ -81,46 +111,18 @@
         "page_title": "livrinho páscoa - coelhinho ton - pdf - arquivo de corte | $mkcriativosdigitais | livrinho páscoa - coelhinho ton - pdf - arquivo de corte | https://loja.infinitepay.io/mkcriativosdigitais/sam5810-livrinho-pascoa---coelhinho-ton---pdf---ar"
       },
       {
-        "page": "https://loja.infinitepay.io/mkcriativosdigitais/sam5810-livrinho-pascoa---coelhinho-ton---pdf---ar",
-        "product": "Arquivos Digitais – Miolos Macaco Cute",
-        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-macaco-cute/",
-        "image": "https://assets.infinitepay.io/unsafe/3840x0/filters:quality(75)/https%3A%2F%2Fapi.infinitepay.io%2Fpdv%2Fv1%2Fproducts%2Fvariation%2Fmedia_proxy%2Fd8e4fbc8-875b-43dc-9872-0733d543c5ef%3Fv%3D2026-03-24T18%3A44%3A26%2B00%3A00",
-        "score": 56.645833333333336,
-        "raw_score": 61.145833333333336,
-        "whole_score": 61.458333333333336,
-        "center_score": 57.8125,
+        "page": "https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/",
+        "product": "Arquivos Digitais – Miolos Girafa Cute",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-encadernacao-girafa-cute/",
+        "image": "https://acdn-us.mitiendanube.com/stores/006/893/246/products/freizinho-542226ec6162a9da8117730586793229-480-0.webp",
+        "score": 56.958333333333336,
+        "raw_score": 61.458333333333336,
+        "whole_score": 59.375,
+        "center_score": 63.020833333333336,
         "theme_overlap": 1,
         "theme_penalty": 0.0,
         "generic_penalty": 6.0,
-        "page_title": "livrinho páscoa - coelhinho ton - pdf - arquivo de corte | $mkcriativosdigitais | livrinho páscoa - coelhinho ton - pdf - arquivo de corte | https://loja.infinitepay.io/mkcriativosdigitais/sam5810-livrinho-pascoa---coelhinho-ton---pdf---ar"
-      },
-      {
-        "page": "https://www.arquivossilhouette.com.br/arquivo-topo-de-bolo-barbie-loira-p209427",
-        "product": "Estampa Fazendinha Vermelha",
-        "product_url": "https://guilhermeangeli.com.br/produto/estampa-fazendinha-vermelha/",
-        "image": "https://cdn.entrypoint.directory/assets/58757/produtos/209427/dd3b1888d55b70c2358e4419529ab3f169bd806d84994.png",
-        "score": 56.45833333333334,
-        "raw_score": 66.45833333333334,
-        "whole_score": 73.95833333333333,
-        "center_score": 59.895833333333336,
-        "theme_overlap": 0,
-        "theme_penalty": 4.0,
-        "generic_penalty": 6.0,
-        "page_title": "arquivo topo de bolo - barbie loira - arquivos de corte silhouette, scanncut e pdf | topos de bolo e kits digitais | arquivo topo de bolo - barbie loira | arquivo topo de bolo - barbie loira - arquivos de corte silhouette, scanncut e pdf | topos de bolo e kits digitais | https://www.arquivossilhouette.com.br/arquivo-topo-de-bolo-barbie-loira-p209427"
-      },
-      {
-        "page": "https://loja.infinitepay.io/mkcriativosdigitais/sgs1341-pokemon---kit-digital-ia-png",
-        "product": "40 Ilustrações Digitais de Natal",
-        "product_url": "https://guilhermeangeli.com.br/produto/40-ilustracoes-digitais-de-natal/",
-        "image": "https://assets.infinitepay.io/unsafe/3840x0/filters:quality(75)/https%3A%2F%2Fapi.infinitepay.io%2Fpdv%2Fv1%2Fproducts%2Fvariation%2Fmedia_proxy%2Fb2720fb5-cc9c-497b-8a22-ac03cd4d4faf%3Fv%3D2026-03-24T12%3A25%3A47%2B00%3A00",
-        "score": 56.22916666666667,
-        "raw_score": 60.72916666666667,
-        "whole_score": 60.416666666666664,
-        "center_score": 62.5,
-        "theme_overlap": 1,
-        "theme_penalty": 0.0,
-        "generic_penalty": 6.0,
-        "page_title": "pokémon - kit digital ia png | $mkcriativosdigitais | pokémon - kit digital ia png | https://loja.infinitepay.io/mkcriativosdigitais/sgs1341-pokemon---kit-digital-ia-png"
+        "page_title": "frei gilson - kits digitais - loja de arquivos | frei gilson - kits digitais | frei gilson - kits digitais | https://www.lojadearquivos.com.br/produtos/frei-gilson-kits-digitais/"
       }
     ]
   }
