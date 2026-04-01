@@ -73,8 +73,8 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # =========================
 
 EMAIL_TESTE = False
-RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = False
+RESETAR_CACHE = True
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
@@ -249,6 +249,9 @@ EMAIL_HOST = os.getenv("EMAIL_HOST", "")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USER = os.getenv("EMAIL_USER", "")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+
+WORKER_INGEST_URL = os.getenv("WORKER_INGEST_URL", "").strip()
+WORKER_INGEST_TOKEN = os.getenv("WORKER_INGEST_TOKEN", "").strip()
 
 USER_AGENT = {
     "User-Agent": "Mozilla/5.0"
@@ -751,6 +754,7 @@ def build_refs() -> list[dict]:
                 refs.append({
                     "product": p.get("name", "(sem nome)"),
                     "url": p.get("permalink", ""),
+                    "reference_image_url": src,
                     "whole_phash": str(views["whole"][0]),
                     "whole_dhash": str(views["whole"][1]),
                     "whole_whash": str(views["whole"][2]),
@@ -1117,6 +1121,102 @@ def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
     if diff < DOMINANCE_MIN_DIFF:
         return AMBIGUOUS_MATCH_PENALTY
     return 0.0
+
+# =========================
+# WORKER / REVISÃO WEB
+# =========================
+
+def make_case_id(suspect_page_url: str, product_url: str, suspect_image_url: str) -> str:
+    base = f"{suspect_page_url}|{product_url}|{suspect_image_url}"
+    return __import__("hashlib").sha256(base.encode("utf-8")).hexdigest()[:24]
+
+
+def build_case_payload(alerts: list[dict]) -> dict:
+    cases = []
+
+    for item in alerts:
+        suspect_page_url = item.get("page", "")
+        product_url = item.get("product_url", "")
+        suspect_image_url = item.get("image", "")
+        reference_image_url = item.get("reference_image_url", "")
+        product_name = item.get("product", "")
+        score_percent = float(item.get("score", 0.0))
+
+        notes_parts = [
+            f"raw_score={float(item.get('raw_score', 0.0)):.1f}%",
+            f"whole_score={float(item.get('whole_score', 0.0)):.1f}%",
+            f"center_score={float(item.get('center_score', 0.0)):.1f}%",
+            f"theme_overlap={item.get('theme_overlap', 0)}",
+            f"theme_penalty={float(item.get('theme_penalty', 0.0)):.1f}",
+            f"generic_penalty={float(item.get('generic_penalty', 0.0)):.1f}",
+            f"dominance_penalty={float(item.get('dominance_penalty', 0.0)):.1f}",
+        ]
+
+        page_title = (item.get("page_title") or "").strip()
+        if page_title:
+            notes_parts.append(f"page_context={truncate_text(page_title, 250)}")
+
+        links = item.get("links") or []
+        if links:
+            notes_parts.append("external_links=" + " | ".join(links[:5]))
+
+        case_id = item.get("id") or make_case_id(
+            suspect_page_url=suspect_page_url,
+            product_url=product_url,
+            suspect_image_url=suspect_image_url,
+        )
+
+        cases.append({
+            "id": case_id,
+            "suspect_image_url": suspect_image_url,
+            "reference_image_url": reference_image_url,
+            "suspect_page_url": suspect_page_url,
+            "product_url": product_url,
+            "product_name": product_name,
+            "score": round(score_percent, 1),
+            "score_percent": round(score_percent, 1),
+            "match_type": "composite_hash",
+            "source": "google_alerts_rss",
+            "notes": " ; ".join(notes_parts),
+            "status": "pending",
+        })
+
+    return {"cases": cases}
+
+
+def send_cases_to_worker(alerts: list[dict]) -> None:
+    if not WORKER_INGEST_URL:
+        log("WORKER_INGEST_URL não configurado. Pulando envio para interface web.")
+        return
+
+    if not WORKER_INGEST_TOKEN:
+        log("WORKER_INGEST_TOKEN não configurado. Pulando envio para interface web.")
+        return
+
+    payload = build_case_payload(alerts)
+
+    if not payload["cases"]:
+        log("Nenhum caso para enviar ao Worker.")
+        return
+
+    try:
+        response = requests.post(
+            WORKER_INGEST_URL,
+            headers={
+                "Content-Type": "application/json",
+                "X-Ingest-Token": WORKER_INGEST_TOKEN,
+            },
+            json=payload,
+            timeout=30,
+        )
+
+        log(f"Worker ingest status: {response.status_code}")
+        log(f"Worker ingest body: {response.text}")
+        response.raise_for_status()
+        log(f"Casos enviados para interface web: {len(payload['cases'])}")
+    except Exception as e:
+        log(f"Falha ao enviar casos para o Worker: {e}")
+
 
 # =========================
 # STATE
@@ -1518,6 +1618,7 @@ def main():
                     "page": url,
                     "product": get_ref_product_name(r),
                     "product_url": get_ref_product_url(r),
+                    "reference_image_url": r.get("reference_image_url", ""),
                     "image": im,
                     "score": final_score,
                     "raw_score": raw_score,
@@ -1593,6 +1694,7 @@ def main():
 
     log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_PERCENT}%): {len(alerts)}")
 
+    send_cases_to_worker(alerts)
     maybe_send_test_report(state)
 
     if alerts:
