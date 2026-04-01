@@ -52,14 +52,14 @@ TOP_SCORES_LIMIT = 5
 # Regras de penalização / coerência
 GENERIC_MATCH_SPREAD_LIMIT = 3
 GENERIC_MATCH_SPREAD_PENALTY = 8.0
-NO_THEME_OVERLAP_PENALTY = 6.0
-LOW_THEME_OVERLAP_PENALTY = 3.0
+NO_THEME_OVERLAP_PENALTY = 3.0
+LOW_THEME_OVERLAP_PENALTY = 1.5
 
 # Regras novas de aceitação
 MIN_THEME_OVERLAP_FOR_NORMAL_MATCH = 1
-RAW_SCORE_FOR_THEMELESS_MATCH = 72.0
-DOMINANCE_MIN_DIFF = 5.0
-AMBIGUOUS_MATCH_PENALTY = 7.0
+RAW_SCORE_FOR_THEMELESS_MATCH = 60.0
+DOMINANCE_MIN_DIFF = 4.0
+AMBIGUOUS_MATCH_PENALTY = 5.0
 
 # Configurações de robustez do e-mail
 EMAIL_SEND_MAX_ATTEMPTS = 3
@@ -1092,23 +1092,38 @@ def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> tupl
     penalty = 0.0
 
     if overlap >= 1:
-        boost += min(overlap * 1.0, 3.0)
+        boost += min(overlap * 1.2, 4.0)
     elif ref.get("_tokens"):
         penalty += NO_THEME_OVERLAP_PENALTY
     else:
         penalty += LOW_THEME_OVERLAP_PENALTY
 
     if ref.get("_token_count", 0) == 0:
-        penalty += 2.0
+        penalty += 1.0
+
+    if raw_score >= 70.0:
+        penalty = max(0.0, penalty - 1.5)
+    elif raw_score >= 64.0:
+        penalty = max(0.0, penalty - 0.5)
 
     adjusted = raw_score + boost - penalty
     adjusted = max(0.0, min(100.0, adjusted))
     return adjusted, overlap, penalty
 
-def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int) -> bool:
+def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int, whole_score: float, center_score: float) -> bool:
     if theme_overlap >= MIN_THEME_OVERLAP_FOR_NORMAL_MATCH:
         return True
-    return raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH
+
+    if raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH:
+        return True
+
+    if center_score >= 68.0:
+        return True
+
+    if whole_score >= 66.0 and center_score >= 62.0:
+        return True
+
+    return False
 
 def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
     if len(sorted_results) < 2:
@@ -1596,9 +1611,27 @@ def main():
                 if theme_penalty > 0:
                     discard_stats["theme_penalty_applied"] += 1
 
-                if not passes_minimum_coherence_gate(raw_score, theme_overlap):
-                    discard_stats["coherence_gate_rejected"] += 1
-                    continue
+                if not passes_minimum_coherence_gate(raw_score, theme_overlap, whole_score, center_score):
+    discard_stats["coherence_gate_rejected"] += 1
+
+    rejected_item = {
+        "page": url,
+        "product": get_ref_product_name(r),
+        "product_url": get_ref_product_url(r),
+        "image": im,
+        "score": item["adjusted_base"],
+        "raw_score": raw_score,
+        "whole_score": whole_score,
+        "center_score": center_score,
+        "theme_overlap": theme_overlap,
+        "theme_penalty": theme_penalty,
+        "generic_penalty": generic_penalty,
+        "dominance_penalty": dominance_penalty,
+        "page_title": page_context.get("text", ""),
+    }
+
+    top_matches = merge_match(top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
+    continue
 
                 final_score = max(
                     0.0,
