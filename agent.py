@@ -52,13 +52,13 @@ TOP_SCORES_LIMIT = 5
 
 # Regras de penalização / coerência
 GENERIC_MATCH_SPREAD_LIMIT = 3
-GENERIC_MATCH_SPREAD_PENALTY = 8.0
+GENERIC_MATCH_SPREAD_PENALTY = 4.0
 NO_THEME_OVERLAP_PENALTY = 3.0
 LOW_THEME_OVERLAP_PENALTY = 1.5
 
 # Regras novas de aceitação
 MIN_THEME_OVERLAP_FOR_NORMAL_MATCH = 1
-RAW_SCORE_FOR_THEMELESS_MATCH = 60.0
+RAW_SCORE_FOR_THEMELESS_MATCH = 55.0
 DOMINANCE_MIN_DIFF = 4.0
 AMBIGUOUS_MATCH_PENALTY = 5.0
 
@@ -75,7 +75,7 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 EMAIL_TESTE = False
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -1118,10 +1118,10 @@ def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int, whole_sc
     if raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH:
         return True
 
-    if center_score >= 68.0:
+    if center_score >= 60.0:
         return True
 
-    if whole_score >= 66.0 and center_score >= 62.0:
+    if whole_score >= 62.0 and center_score >= 58.0:
         return True
 
     return False
