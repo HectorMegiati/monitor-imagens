@@ -18,10 +18,10 @@ import imagehash
 # =========================
 
 # Score mínimo para começar a considerar internamente um match
-INITIAL_HASH_FILTER = 50
+INITIAL_HASH_FILTER = 52
 
 # Score mínimo para enviar no e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 92
+REVIEW_THRESHOLD_PERCENT = 93
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
@@ -40,7 +40,7 @@ WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 
 # Filtros mínimos de imagem
 MIN_IMAGE_SIDE = 220
-MIN_IMAGE_AREA = 120000  # ex.: 400x300 = 120000
+MIN_IMAGE_AREA = 120000
 
 # Timeout das requisições
 REQUEST_TIMEOUT = 12
@@ -51,9 +51,20 @@ TOP_SCORES_LIMIT = 5
 
 # Regras de penalização / coerência
 GENERIC_MATCH_SPREAD_LIMIT = 3
-GENERIC_MATCH_SPREAD_PENALTY = 6.0
-NO_THEME_OVERLAP_PENALTY = 4.0
-LOW_THEME_OVERLAP_PENALTY = 2.0
+GENERIC_MATCH_SPREAD_PENALTY = 8.0
+NO_THEME_OVERLAP_PENALTY = 6.0
+LOW_THEME_OVERLAP_PENALTY = 3.0
+
+# Regras novas de aceitação
+MIN_THEME_OVERLAP_FOR_NORMAL_MATCH = 1
+RAW_SCORE_FOR_THEMELESS_MATCH = 72.0
+DOMINANCE_MIN_DIFF = 5.0
+AMBIGUOUS_MATCH_PENALTY = 7.0
+
+# Configurações de robustez do e-mail
+EMAIL_SEND_MAX_ATTEMPTS = 3
+EMAIL_RETRY_DELAY_SECONDS = 8
+MAX_PENDING_EMAILS = 20
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
@@ -61,9 +72,9 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = False
-RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = False
+EMAIL_TESTE = True
+RESETAR_CACHE = True
+RESETAR_LINKS_VISTOS = True
 
 # =========================
 # PATHS
@@ -219,6 +230,11 @@ GENERIC_PRODUCT_TOKENS = {
     "lembrancinhas",
     "festa",
     "festas",
+    "papéis",
+    "papeis",
+    "digitais",
+    "miolos",
+    "miolo",
 }
 
 # =========================
@@ -329,6 +345,7 @@ def product_name_tokens(name: str) -> set[str]:
         "produto", "produtos", "combo", "estampas", "papelaria", "mimos", "mimo", "caixa",
         "caixinhas", "sacolinha", "sacolinhas", "encadernação", "encadernacao", "adesivo",
         "adesivos", "printable", "imprimir", "natal", "pascoa", "páscoa", "dia", "dos",
+        "papeis", "papéis", "digitais", "miolo", "miolos"
     }
 
     cleaned = set()
@@ -418,27 +435,120 @@ def unwrap_google_url(url: str) -> str:
         return url
 
 # =========================
-# EMAIL
+# EMAIL ROBUSTO
 # =========================
 
-def send_email(subject: str, body: str) -> None:
+def send_email(subject: str, body: str, max_attempts: int = EMAIL_SEND_MAX_ATTEMPTS) -> bool:
     log(f"Enviando e-mail: {subject}")
 
     if not EMAIL_HOST or not EMAIL_USER or not EMAIL_PASSWORD:
-        raise RuntimeError("EMAIL_HOST / EMAIL_USER / EMAIL_PASSWORD não configurados.")
+        log("ERRO E-MAIL: EMAIL_HOST / EMAIL_USER / EMAIL_PASSWORD não configurados.")
+        return False
 
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_USER
-    msg["To"] = EMAIL_DESTINATION
+    last_error = None
 
-    s = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-    s.starttls()
-    s.login(EMAIL_USER, EMAIL_PASSWORD)
-    s.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
-    s.quit()
+    for attempt in range(1, max_attempts + 1):
+        smtp_conn = None
+        try:
+            msg = MIMEText(body, "plain", "utf-8")
+            msg["Subject"] = subject
+            msg["From"] = EMAIL_USER
+            msg["To"] = EMAIL_DESTINATION
 
-    log("E-mail enviado com sucesso.")
+            smtp_conn = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
+            smtp_conn.ehlo()
+            smtp_conn.starttls()
+            smtp_conn.ehlo()
+            smtp_conn.login(EMAIL_USER, EMAIL_PASSWORD)
+            smtp_conn.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
+            smtp_conn.quit()
+
+            log("E-mail enviado com sucesso.")
+            return True
+
+        except smtplib.SMTPAuthenticationError as e:
+            last_error = e
+            log(f"ERRO SMTP AUTH na tentativa {attempt}/{max_attempts}: {e}")
+            if smtp_conn:
+                try:
+                    smtp_conn.quit()
+                except Exception:
+                    pass
+            break
+
+        except smtplib.SMTPException as e:
+            last_error = e
+            log(f"ERRO SMTP na tentativa {attempt}/{max_attempts}: {e}")
+            if smtp_conn:
+                try:
+                    smtp_conn.quit()
+                except Exception:
+                    pass
+
+        except Exception as e:
+            last_error = e
+            log(f"ERRO AO ENVIAR E-MAIL na tentativa {attempt}/{max_attempts}: {e}")
+            if smtp_conn:
+                try:
+                    smtp_conn.quit()
+                except Exception:
+                    pass
+
+        if attempt < max_attempts:
+            log(f"Aguardando {EMAIL_RETRY_DELAY_SECONDS}s antes de nova tentativa de envio.")
+            time.sleep(EMAIL_RETRY_DELAY_SECONDS)
+
+    log(f"Falha definitiva no envio do e-mail: {subject} | Último erro: {last_error}")
+    return False
+
+def build_pending_email(key: str, subject: str, body: str, kind: str) -> dict:
+    return {
+        "key": key,
+        "subject": subject,
+        "body": body,
+        "kind": kind,
+        "created_at": now(),
+        "attempts": 0,
+    }
+
+def enqueue_pending_email(state: dict, key: str, subject: str, body: str, kind: str) -> None:
+    pending = state.setdefault("pending_emails", [])
+
+    for item in pending:
+        if item.get("key") == key:
+            log(f"E-mail pendente já existe na fila: {key}")
+            return
+
+    pending.append(build_pending_email(key, subject, body, kind))
+
+    if len(pending) > MAX_PENDING_EMAILS:
+        pending[:] = pending[-MAX_PENDING_EMAILS:]
+
+    log(f"E-mail adicionado à fila de pendências: {key}")
+
+def flush_pending_emails(state: dict) -> dict:
+    pending = state.get("pending_emails", [])
+    if not pending:
+        return state
+
+    log(f"Tentando reenviar {len(pending)} e-mail(s) pendente(s).")
+
+    remaining = []
+    for item in pending:
+        subject = item.get("subject", "(sem assunto)")
+        body = item.get("body", "")
+        key = item.get("key", "")
+        item["attempts"] = int(item.get("attempts", 0)) + 1
+
+        ok = send_email(subject, body)
+        if ok:
+            log(f"E-mail pendente reenviado com sucesso: {key}")
+        else:
+            log(f"E-mail pendente permaneceu na fila: {key}")
+            remaining.append(item)
+
+    state["pending_emails"] = remaining
+    return state
 
 # =========================
 # IMAGEM
@@ -463,10 +573,6 @@ def is_valid_pil_image(img: Image.Image) -> bool:
         return w >= MIN_IMAGE_SIDE and h >= MIN_IMAGE_SIDE and (w * h) >= MIN_IMAGE_AREA
     except Exception:
         return False
-
-def image_area(img: Image.Image) -> int:
-    w, h = img.size
-    return w * h
 
 def aspect_ratio(img: Image.Image) -> float:
     w, h = img.size
@@ -508,7 +614,7 @@ def resize_with_minimum(img: Image.Image, min_side: int = 256) -> Image.Image:
     new_h = max(1, int(round(h * scale)))
     return img.resize((new_w, new_h), Image.LANCZOS)
 
-def center_crop(img: Image.Image, crop_ratio: float = 0.72) -> Image.Image:
+def center_crop(img: Image.Image, crop_ratio: float = 0.58) -> Image.Image:
     w, h = img.size
     new_w = max(1, int(w * crop_ratio))
     new_h = max(1, int(h * crop_ratio))
@@ -520,7 +626,7 @@ def center_crop(img: Image.Image, crop_ratio: float = 0.72) -> Image.Image:
 
     return img.crop((left, top, right, bottom))
 
-def quadrant_crops(img: Image.Image, crop_ratio: float = 0.62) -> list[Image.Image]:
+def quadrant_crops(img: Image.Image, crop_ratio: float = 0.55) -> list[Image.Image]:
     w, h = img.size
     cw = max(1, int(w * crop_ratio))
     ch = max(1, int(h * crop_ratio))
@@ -544,10 +650,10 @@ def build_image_hash_views(img: Image.Image) -> dict:
     img = resize_with_minimum(img, 256)
 
     whole = compute_hash_triplet(img)
-    center = compute_hash_triplet(center_crop(img, 0.72))
+    center = compute_hash_triplet(center_crop(img, 0.58))
 
     quads = []
-    for q in quadrant_crops(img, 0.62):
+    for q in quadrant_crops(img, 0.55):
         quads.append(compute_hash_triplet(q))
 
     return {
@@ -567,8 +673,7 @@ def composite_similarity_score(suspect_views: dict, ref_views: dict) -> tuple[fl
 
     best_quad = max(quad_scores) if quad_scores else 0.0
 
-    # Peso maior para centro e imagem inteira.
-    final_raw = (whole_score * 0.40) + (center_score * 0.40) + (best_quad * 0.20)
+    final_raw = (whole_score * 0.25) + (center_score * 0.55) + (best_quad * 0.20)
     return final_raw, whole_score, center_score
 
 def url_has_thumbnail_hint(url: str) -> bool:
@@ -679,10 +784,13 @@ def prepare_refs(refs: list[dict]) -> list[dict]:
                     imagehash.hex_to_hash(q["whash"]),
                 ))
 
+            token_set = product_name_tokens(ref.get("product", ""))
+
             item = {
                 **ref,
-                "_tokens": product_name_tokens(ref.get("product", "")),
+                "_tokens": token_set,
                 "_theme_key": get_product_theme_key(ref),
+                "_token_count": len(token_set),
                 "_views": {
                     "whole": (
                         imagehash.hex_to_hash(ref["whole_phash"]),
@@ -980,15 +1088,35 @@ def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> tupl
     penalty = 0.0
 
     if overlap >= 1:
-        boost += min(overlap * 1.5, 4.5)
+        boost += min(overlap * 1.0, 3.0)
     elif ref.get("_tokens"):
         penalty += NO_THEME_OVERLAP_PENALTY
     else:
         penalty += LOW_THEME_OVERLAP_PENALTY
 
+    if ref.get("_token_count", 0) == 0:
+        penalty += 2.0
+
     adjusted = raw_score + boost - penalty
     adjusted = max(0.0, min(100.0, adjusted))
     return adjusted, overlap, penalty
+
+def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int) -> bool:
+    if theme_overlap >= MIN_THEME_OVERLAP_FOR_NORMAL_MATCH:
+        return True
+    return raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH
+
+def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
+    if len(sorted_results) < 2:
+        return 0.0
+
+    best_score = float(sorted_results[0]["adjusted_base"])
+    second_score = float(sorted_results[1]["adjusted_base"])
+    diff = best_score - second_score
+
+    if diff < DOMINANCE_MIN_DIFF:
+        return AMBIGUOUS_MATCH_PENALTY
+    return 0.0
 
 # =========================
 # STATE
@@ -1017,7 +1145,11 @@ def load_state() -> dict:
     if "top" in weekly and not weekly.get("top_scores"):
         weekly["top_scores"] = weekly["top"]
 
-    return {"seen": seen, "weekly": weekly}
+    pending_emails = state.get("pending_emails")
+    if pending_emails is None:
+        pending_emails = []
+
+    return {"seen": seen, "weekly": weekly, "pending_emails": pending_emails}
 
 def save_state(state: dict) -> None:
     save_json(SEEN_FILE, state)
@@ -1086,6 +1218,7 @@ def format_match_list(matches: list[dict]) -> str:
         lines.append(f"   Sobreposição temática: {int(m.get('theme_overlap', 0))}")
         lines.append(f"   Penalização temática: {float(m.get('theme_penalty', 0)):.1f}")
         lines.append(f"   Penalização genérica: {float(m.get('generic_penalty', 0)):.1f}")
+        lines.append(f"   Penalização por ambiguidade: {float(m.get('dominance_penalty', 0)):.1f}")
         lines.append(f"   Página: {m.get('page', '')}")
         lines.append(f"   Produto de referência: {m.get('product', '')}")
         lines.append(f"   Seu produto: {m.get('product_url', '')}")
@@ -1120,24 +1253,35 @@ def maybe_send_test_report(state: dict) -> None:
     if not EMAIL_TESTE:
         return
 
+    subject = "Relatório Semanal - Monitoramento (TESTE)"
     body = build_report_body(
         "Relatório Semanal do Agente de Monitoramento (TESTE)",
         state["weekly"],
     ) + "\nEste é um envio de teste.\nDepois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
 
-    send_email("Relatório Semanal - Monitoramento (TESTE)", body)
+    ok = send_email(subject, body)
+    if not ok:
+        log("Falha no envio do relatório de teste. O processo continuará sem interrupção.")
 
 def maybe_send_weekly_report(state: dict) -> dict:
     if now() - state["weekly"]["start"] < WEEKLY_REPORT_SECONDS:
         return state
 
+    subject = "Relatório Semanal - Monitoramento"
     body = build_report_body(
         "Relatório Semanal do Agente de Monitoramento",
         state["weekly"],
     )
 
-    send_email("Relatório Semanal - Monitoramento", body)
-    state["weekly"] = build_default_weekly()
+    weekly_key = f"weekly:{state['weekly'].get('start', 0)}"
+
+    ok = send_email(subject, body)
+    if ok:
+        state["weekly"] = build_default_weekly()
+        return state
+
+    log("Falha no envio do relatório semanal. O relatório permanecerá acumulado para nova tentativa.")
+    enqueue_pending_email(state, weekly_key, subject, body, "weekly")
     return state
 
 # =========================
@@ -1166,9 +1310,13 @@ def main():
     whitelist = load_lines(WHITELIST_FILE)
     state = load_state()
 
+    # tenta reenviar pendências logo no começo
+    state = flush_pending_emails(state)
+
     log(f"Feeds carregados: {len(feeds)}")
     log(f"Whitelist entries: {len(whitelist)}")
     log(f"Links já vistos (cache): {len(state['seen'])}")
+    log(f"E-mails pendentes na fila: {len(state.get('pending_emails', []))}")
 
     refs = load_cache()
     urls = read_rss(feeds)
@@ -1202,6 +1350,8 @@ def main():
         "too_small_area": 0,
         "generic_penalty_applied": 0,
         "theme_penalty_applied": 0,
+        "dominance_penalty_applied": 0,
+        "coherence_gate_rejected": 0,
     }
 
     for idx, url in enumerate(urls[:MAX_PAGES_PER_RUN], start=1):
@@ -1331,6 +1481,10 @@ def main():
                 generic_penalty = GENERIC_MATCH_SPREAD_PENALTY
                 discard_stats["generic_penalty_applied"] += 1
 
+            dominance_penalty = dominance_penalty_for_ranked_results(per_ref_results)
+            if dominance_penalty > 0:
+                discard_stats["dominance_penalty_applied"] += 1
+
             for item in per_ref_results:
                 r = item["ref"]
                 raw_score = item["raw_score"]
@@ -1339,10 +1493,17 @@ def main():
                 theme_overlap = item["theme_overlap"]
                 theme_penalty = item["theme_penalty"]
 
-                final_score = max(0.0, min(100.0, item["adjusted_base"] - generic_penalty))
-
                 if theme_penalty > 0:
                     discard_stats["theme_penalty_applied"] += 1
+
+                if not passes_minimum_coherence_gate(raw_score, theme_overlap):
+                    discard_stats["coherence_gate_rejected"] += 1
+                    continue
+
+                final_score = max(
+                    0.0,
+                    min(100.0, item["adjusted_base"] - generic_penalty - dominance_penalty)
+                )
 
                 if final_score > page_best_score:
                     page_best_score = final_score
@@ -1365,6 +1526,7 @@ def main():
                     "theme_overlap": theme_overlap,
                     "theme_penalty": theme_penalty,
                     "generic_penalty": generic_penalty,
+                    "dominance_penalty": dominance_penalty,
                     "page_title": page_context.get("text", ""),
                 }
                 top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
@@ -1382,6 +1544,7 @@ def main():
                         "theme_overlap": theme_overlap,
                         "theme_penalty": theme_penalty,
                         "generic_penalty": generic_penalty,
+                        "dominance_penalty": dominance_penalty,
                         "page_title": page_context.get("text", ""),
                         "links": suspicious_links(html),
                     }
@@ -1451,6 +1614,7 @@ def main():
             body += f"Sobreposição temática: {a['theme_overlap']}\n"
             body += f"Penalização temática: {a['theme_penalty']:.1f}\n"
             body += f"Penalização genérica: {a['generic_penalty']:.1f}\n"
+            body += f"Penalização por ambiguidade: {a['dominance_penalty']:.1f}\n"
             if a.get("page_title"):
                 body += f"Contexto da página: {truncate_text(a['page_title'])}\n"
             if a["links"]:
@@ -1459,7 +1623,11 @@ def main():
                     body += f"- {l}\n"
             body += "\n"
 
-        send_email("Candidatos para Revisão Manual", body)
+        alert_key = f"alerts:{now()}:{len(alerts)}"
+        ok = send_email("Candidatos para Revisão Manual", body)
+        if not ok:
+            log("Falha no envio do e-mail de alertas. O conteúdo será colocado na fila de pendências.")
+            enqueue_pending_email(state, alert_key, "Candidatos para Revisão Manual", body, "alerts")
 
     state = maybe_send_weekly_report(state)
     save_state(state)
