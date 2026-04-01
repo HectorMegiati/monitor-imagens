@@ -21,13 +21,13 @@ import imagehash
 INITIAL_HASH_FILTER = 52
 
 # Score mínimo para enviar no e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 93
+REVIEW_THRESHOLD_PERCENT = 80
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
 
 # Quantidade máxima de imagens candidatas por página suspeita
-MAX_IMAGES_PER_SUSPECT_PAGE = 4
+MAX_IMAGES_PER_SUSPECT_PAGE = 8
 
 # Quantidade máxima de páginas por execução
 MAX_PAGES_PER_RUN = 15
@@ -39,8 +39,8 @@ CACHE_REFRESH_SECONDS = 48 * 60 * 60
 WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 
 # Filtros mínimos de imagem
-MIN_IMAGE_SIDE = 220
-MIN_IMAGE_AREA = 120000
+MIN_IMAGE_SIDE = 120
+MIN_IMAGE_AREA = 30000
 
 # Timeout das requisições
 REQUEST_TIMEOUT = 12
@@ -926,8 +926,8 @@ def is_noisy_image_candidate(meta: dict) -> tuple[bool, str]:
     if any(x in url for x in [".svg", "favicon", "gravatar"]):
         return True, "url_noise"
 
-    if is_probable_preview_or_thumbnail_url(url):
-        return True, "thumbnail_hint"
+  #  if is_probable_preview_or_thumbnail_url(url):
+   #     return True, "thumbnail_hint"
 
     width = meta.get("width")
     height = meta.get("height")
