@@ -20,9 +20,13 @@ import imagehash
 # Score mínimo para começar a considerar internamente um match
 INITIAL_HASH_FILTER = 52
 
-# Score mínimo para enviar no e-mail de revisão manual
+# Score mínimo para enviar para a interface web / revisão manual
 REVIEW_THRESHOLD_HIGH = 80   # suspeita forte
 REVIEW_THRESHOLD_LOW = 55    # suspeita moderada
+
+# Força o envio do melhor caso da execução quando nenhum alerta atingir o threshold
+FORCE_SEND_BEST_CURRENT_WHEN_NO_ALERTS = True
+FORCE_SEND_MIN_SCORE = INITIAL_HASH_FILTER
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
@@ -53,14 +57,14 @@ TOP_SCORES_LIMIT = 5
 # Regras de penalização / coerência
 GENERIC_MATCH_SPREAD_LIMIT = 3
 GENERIC_MATCH_SPREAD_PENALTY = 4.0
-NO_THEME_OVERLAP_PENALTY = 3.0
-LOW_THEME_OVERLAP_PENALTY = 1.5
+NO_THEME_OVERLAP_PENALTY = 6.0
+LOW_THEME_OVERLAP_PENALTY = 3.0
 
 # Regras novas de aceitação
 MIN_THEME_OVERLAP_FOR_NORMAL_MATCH = 1
-RAW_SCORE_FOR_THEMELESS_MATCH = 55.0
-DOMINANCE_MIN_DIFF = 4.0
-AMBIGUOUS_MATCH_PENALTY = 5.0
+RAW_SCORE_FOR_THEMELESS_MATCH = 72.0
+DOMINANCE_MIN_DIFF = 5.0
+AMBIGUOUS_MATCH_PENALTY = 7.0
 
 # Configurações de robustez do e-mail
 EMAIL_SEND_MAX_ATTEMPTS = 3
@@ -1115,7 +1119,7 @@ def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int, whole_sc
     if theme_overlap >= MIN_THEME_OVERLAP_FOR_NORMAL_MATCH:
         return True
 
-    if raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH:
+    if raw_score >= 55.0:
         return True
 
     if center_score >= 60.0:
@@ -1138,43 +1142,29 @@ def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
         return AMBIGUOUS_MATCH_PENALTY
     return 0.0
 
+
 # =========================
-# WORKER / REVISÃO WEB
+# WORKER / INTERFACE WEB
 # =========================
 
 def make_case_id(suspect_page_url: str, product_url: str, suspect_image_url: str) -> str:
     base = f"{suspect_page_url}|{product_url}|{suspect_image_url}"
-    return __import__("hashlib").sha256(base.encode("utf-8")).hexdigest()[:24]
-
+    import hashlib
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:24]
 
 def build_case_payload(alerts: list[dict]) -> dict:
     cases = []
-
     for item in alerts:
         suspect_page_url = item.get("page", "")
         product_url = item.get("product_url", "")
         suspect_image_url = item.get("image", "")
         reference_image_url = item.get("reference_image_url", "")
         product_name = item.get("product", "")
-        score_percent = float(item.get("score", 0.0))
-
-        notes_parts = [
-            f"raw_score={float(item.get('raw_score', 0.0)):.1f}%",
-            f"whole_score={float(item.get('whole_score', 0.0)):.1f}%",
-            f"center_score={float(item.get('center_score', 0.0)):.1f}%",
-            f"theme_overlap={item.get('theme_overlap', 0)}",
-            f"theme_penalty={float(item.get('theme_penalty', 0.0)):.1f}",
-            f"generic_penalty={float(item.get('generic_penalty', 0.0)):.1f}",
-            f"dominance_penalty={float(item.get('dominance_penalty', 0.0)):.1f}",
-        ]
-
-        page_title = (item.get("page_title") or "").strip()
-        if page_title:
-            notes_parts.append(f"page_context={truncate_text(page_title, 250)}")
-
-        links = item.get("links") or []
-        if links:
-            notes_parts.append("external_links=" + " | ".join(links[:5]))
+        score = float(item.get("score", 0))
+        match_type = item.get("match_type", "hash")
+        source = item.get("source", "rss")
+        notes = item.get("notes", "")
+        severity = item.get("severity", "medium")
 
         case_id = item.get("id") or make_case_id(
             suspect_page_url=suspect_page_url,
@@ -1189,17 +1179,15 @@ def build_case_payload(alerts: list[dict]) -> dict:
             "suspect_page_url": suspect_page_url,
             "product_url": product_url,
             "product_name": product_name,
-            "score": round(score_percent, 1),
-            "score_percent": round(score_percent, 1),
-            "match_type": "composite_hash",
-            "source": "google_alerts_rss",
-            "notes": " ; ".join(notes_parts),
-            "severity": item.get("severity", "medium"),
+            "score": score,
+            "score_percent": score,
+            "match_type": match_type,
+            "source": source,
+            "notes": notes,
+            "severity": severity,
             "status": "pending",
         })
-
     return {"cases": cases}
-
 
 def send_cases_to_worker(alerts: list[dict]) -> None:
     if not WORKER_INGEST_URL:
@@ -1226,14 +1214,12 @@ def send_cases_to_worker(alerts: list[dict]) -> None:
             json=payload,
             timeout=30,
         )
-
         log(f"Worker ingest status: {response.status_code}")
         log(f"Worker ingest body: {response.text}")
         response.raise_for_status()
         log(f"Casos enviados para interface web: {len(payload['cases'])}")
     except Exception as e:
         log(f"Falha ao enviar casos para o Worker: {e}")
-
 
 # =========================
 # STATE
@@ -1441,7 +1427,8 @@ def main():
     weekly = state["weekly"]
     best = float(weekly.get("max", 0.0))
     top_scores = weekly.get("top_scores", [])
-    top_matches = weekly.get("top_matches", [])
+    current_top_matches = []
+    weekly_top_matches = weekly.get("top_matches", [])
 
     analyzed = 0
     pages_with_images = 0
@@ -1622,7 +1609,7 @@ def main():
                         "product_url": get_ref_product_url(r),
                         "reference_image_url": r.get("reference_image_url", ""),
                         "image": im,
-                        "score": item["adjusted_base"],
+                        "score": max(0.0, min(100.0, item["adjusted_base"] - generic_penalty - dominance_penalty)),
                         "raw_score": raw_score,
                         "whole_score": whole_score,
                         "center_score": center_score,
@@ -1632,7 +1619,7 @@ def main():
                         "dominance_penalty": dominance_penalty,
                         "page_title": page_context.get("text", ""),
                     }
-                    top_matches = merge_match(top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
+                    current_top_matches = merge_match(current_top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
                     continue
 
                 final_score = max(
@@ -1653,7 +1640,6 @@ def main():
                     "page": url,
                     "product": get_ref_product_name(r),
                     "product_url": get_ref_product_url(r),
-                    "reference_image_url": r.get("reference_image_url", ""),
                     "image": im,
                     "score": final_score,
                     "raw_score": raw_score,
@@ -1665,7 +1651,7 @@ def main():
                     "dominance_penalty": dominance_penalty,
                     "page_title": page_context.get("text", ""),
                 }
-                top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
+                current_top_matches = merge_match(current_top_matches, match_item, limit=TOP_MATCHES_LIMIT)
 
                 if final_score >= REVIEW_THRESHOLD_LOW:
                     severity = "high" if final_score >= REVIEW_THRESHOLD_HIGH else "medium"
@@ -1705,7 +1691,7 @@ def main():
         reverse=True
     )[:TOP_SCORES_LIMIT]
     weekly["top_matches"] = sort_and_trim_matches(
-        list(weekly.get("top_matches", [])) + top_matches,
+        list(weekly.get("top_matches", [])) + current_top_matches,
         TOP_MATCHES_LIMIT
     )
 
@@ -1726,9 +1712,29 @@ def main():
     for k, v in sorted(discard_stats.items(), key=lambda x: x[0]):
         log(f"- {k}: {v}")
 
-    log("Top matches detalhados:")
+    log("Top matches detalhados da execução atual:")
+    for line in format_match_list(current_top_matches).splitlines():
+        log(line)
+
+    log("Top matches detalhados acumulados da semana:")
     for line in format_match_list(weekly["top_matches"]).splitlines():
         log(line)
+
+    if FORCE_SEND_BEST_CURRENT_WHEN_NO_ALERTS and (not alerts) and current_top_matches:
+        best_current = current_top_matches[0]
+        if float(best_current.get("score", 0.0)) >= FORCE_SEND_MIN_SCORE:
+            forced_alert = {
+                **best_current,
+                "links": [],
+                "severity": "forced_best",
+                "notes": "Enviado automaticamente como melhor caso da execução, abaixo do threshold normal."
+            }
+            alerts = merge_alert(alerts, forced_alert)
+            log(
+                f"Melhor caso da execução enviado de forma forçada: "
+                f"{forced_alert.get('score', 0):.1f}% | "
+                f"{forced_alert.get('page', '')}"
+            )
 
     log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_LOW}%): {len(alerts)}")
 
@@ -1748,6 +1754,10 @@ def main():
             body += f"Seu produto: {a['product_url']}\n"
             body += f"Imagem suspeita: {a['image']}\n"
             body += f"Score ajustado: {a['score']:.1f}%\n"
+            if a.get("severity"):
+                body += f"Severidade: {a['severity']}\n"
+            if a.get("notes"):
+                body += f"Observação: {a['notes']}\n"
             body += f"Score bruto composto: {a['raw_score']:.1f}%\n"
             body += f"Score imagem inteira: {a['whole_score']:.1f}%\n"
             body += f"Score recorte central: {a['center_score']:.1f}%\n"
