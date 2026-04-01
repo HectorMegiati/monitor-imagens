@@ -1,1 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revisão de Suspeitas</title>
+  <style>
+    :root {
+      --bg: #f6f1ea;
+      --bg-soft: #fffaf5;
+      --card: #ffffff;
+      --text: #2f241d;
+      --muted: #7a6a5d;
+      --line: #eaded1;
+      --accent: #c56b4f;
+      --accent-dark: #9f4e37;
+      --danger: #9b3d32;
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+      --radius: 18px;
+    }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, var(--bg) 0%, #fdf9f5 100%);
+      color: var(--text);
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .hero {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr .8fr .8fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: bold;
+    }
+
+    input, select, button {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      min-height: 46px;
+      padding: 0 14px;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      transition: .2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .status-bar {
+      margin: 18px 0 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-top {
+      padding: 18px 18px 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f3e4dc;
+      color: var(--accent-dark);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .title {
+      margin: 12px 0 6px;
+      font-size: 22px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .meta-box {
+      background: #fcf8f4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .meta-box small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .media {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .media-panel {
+      background: #fffdfb;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .media-panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .media-frame {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #f3eee9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .media-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: white;
+    }
+
+    .links {
+      display: grid;
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    .link-box {
+      background: #fcf8f4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .link-box strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .link-box a {
+      color: var(--accent-dark);
+      text-decoration: none;
+      word-break: break-word;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0 18px 18px;
+    }
+
+    .btn-outline {
+      background: white;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      filter: brightness(.95);
+    }
+
+    .empty {
+      background: white;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 920px) {
+      .toolbar,
+      .meta,
+      .media,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Revisão de suspeitas</h1>
+      <p>
+        Analise os casos suspeitos, compare a imagem encontrada com a imagem do produto original
+        e classifique cada ocorrência.
+      </p>
+
+      <div class="toolbar">
+        <div class="field">
+          <label for="pin">PIN compartilhado</label>
+          <input id="pin" type="password" placeholder="Digite o PIN para liberar os botões" />
+        </div>
+
+        <div class="field">
+          <label for="reviewer">Nome do revisor</label>
+          <input id="reviewer" type="text" placeholder="Ex.: Hector" />
+        </div>
+
+        <div class="field">
+          <label for="statusFilter">Filtro</label>
+          <select id="statusFilter">
+            <option value="pending">Pendentes</option>
+            <option value="not_my_file">Não parece com meu arquivo</option>
+            <option value="very_similar">Muito parecido com meu arquivo</option>
+            <option value="piracy">Pirataria</option>
+            <option value="all">Todos</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn-primary" id="reloadBtn">Atualizar lista</button>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">Carregando casos...</div>
+    </section>
+
+    <section class="grid" id="casesContainer"></section>
+  </div>
+
+  <script>
+    const API_BASE = "https://shiny-sunset-a528.hectormegiati.workers.dev";
+
+    const statusBar = document.getElementById("statusBar");
+    const casesContainer = document.getElementById("casesContainer");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const statusFilter = document.getElementById("statusFilter");
+    const pinInput = document.getElementById("pin");
+    const reviewerInput = document.getElementById("reviewer");
+
+    function escapeHtml(text) {
+      return String(text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function decisionLabel(status) {
+      const map = {
+        pending: "Pendente",
+        not_my_file: "Não parece com meu arquivo",
+        very_similar: "Muito parecido com meu arquivo",
+        piracy: "Pirataria",
+      };
+      return map[status] || status;
+    }
+
+    async function loadCases() {
+      const filter = statusFilter.value;
+      statusBar.textContent = "Carregando casos...";
+      casesContainer.innerHTML = "";
+
+      try {
+        const response = await fetch(`${API_BASE}/cases?status=${encodeURIComponent(filter)}`);
+        const data = await response.json();
+
+        if (!data.ok) {
+          throw new Error(data.error || "Falha ao carregar");
+        }
+
+        const cases = data.cases || [];
+        statusBar.textContent = `${cases.length} caso(s) encontrado(s).`;
+
+        if (!cases.length) {
+          casesContainer.innerHTML = `
+            <div class="empty">
+              Nenhum caso encontrado para esse filtro.
+            </div>
+          `;
+          return;
+        }
+
+        casesContainer.innerHTML = cases.map(renderCard).join("");
+        bindButtons();
+      } catch (error) {
+        statusBar.textContent = `Erro ao carregar casos: ${error.message}`;
+      }
+    }
+
+    function renderCard(item) {
+      const score = item.score_percent || item.score || 0;
+      return `
+        <article class="card">
+          <div class="card-top">
+            <div class="badge">Status: ${escapeHtml(decisionLabel(item.status || "pending"))}</div>
+            <h2 class="title">${escapeHtml(item.product_name || "Caso suspeito")}</h2>
+
+            <div class="meta">
+              <div class="meta-box">
+                <small>Score</small>
+                <strong>${escapeHtml(score)}%</strong>
+              </div>
+              <div class="meta-box">
+                <small>Origem</small>
+                <strong>${escapeHtml(item.source || "-")}</strong>
+              </div>
+              <div class="meta-box">
+                <small>Tipo de match</small>
+                <strong>${escapeHtml(item.match_type || "-")}</strong>
+              </div>
+              <div class="meta-box">
+                <small>Criado em</small>
+                <strong>${new Date(item.created_at).toLocaleString("pt-BR")}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="media">
+            <div class="media-panel">
+              <h3>Imagem suspeita</h3>
+              <div class="media-frame">
+                <img src="${escapeHtml(item.suspect_image_url)}" alt="Imagem suspeita" loading="lazy" />
+              </div>
+            </div>
+
+            <div class="media-panel">
+              <h3>Imagem do meu produto</h3>
+              <div class="media-frame">
+                <img src="${escapeHtml(item.reference_image_url)}" alt="Imagem do produto original" loading="lazy" />
+              </div>
+            </div>
+          </div>
+
+          <div class="links">
+            <div class="link-box">
+              <strong>Página suspeita</strong>
+              <a href="${escapeHtml(item.suspect_page_url)}" target="_blank" rel="noopener noreferrer">
+                ${escapeHtml(item.suspect_page_url)}
+              </a>
+            </div>
+
+            <div class="link-box">
+              <strong>Produto no meu site</strong>
+              <a href="${escapeHtml(item.product_url)}" target="_blank" rel="noopener noreferrer">
+                ${escapeHtml(item.product_url)}
+              </a>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn-outline decision-btn" data-id="${escapeHtml(item.id)}" data-decision="not_my_file">
+              Não parece com meu arquivo
+            </button>
+            <button class="btn-outline decision-btn" data-id="${escapeHtml(item.id)}" data-decision="very_similar">
+              Muito parecido com meu arquivo
+            </button>
+            <button class="btn-danger decision-btn" data-id="${escapeHtml(item.id)}" data-decision="piracy">
+              Pirataria
+            </button>
+          </div>
+        </article>
+      `;
+    }
+
+    function bindButtons() {
+      document.querySelectorAll(".decision-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const pin = pinInput.value.trim();
+          const reviewer = reviewerInput.value.trim() || "revisor";
+          const caseId = btn.dataset.id;
+          const decision = btn.dataset.decision;
+
+          if (!pin) {
+            alert("Digite o PIN para registrar a decisão.");
+            return;
+          }
+
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Salvando...";
+
+          try {
+            const response = await fetch(`${API_BASE}/cases/decision`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Review-Pin": pin
+              },
+              body: JSON.stringify({
+                case_id: caseId,
+                decision,
+                reviewer
+              })
+            });
+
+            const data = await response.json();
+
+            if (!data.ok) {
+              throw new Error(data.error || "Falha ao salvar");
+            }
+
+            await loadCases();
+          } catch (error) {
+            alert(`Erro: ${error.message}`);
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        });
+      });
+    }
+
+    reloadBtn.addEventListener("click", loadCases);
+    statusFilter.addEventListener("change", loadCases);
+
+    loadCases();
+  </script>
+</body>
+</html>
