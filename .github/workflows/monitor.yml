@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - name: Instalar Python
         uses: actions/setup-python@v5
@@ -26,6 +27,14 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
+      - name: Verificar secrets do Worker
+        env:
+          WORKER_INGEST_URL: ${{ secrets.WORKER_INGEST_URL }}
+          WORKER_INGEST_TOKEN: ${{ secrets.WORKER_INGEST_TOKEN }}
+        run: |
+          echo "WORKER_INGEST_URL configurado? $([ -n "$WORKER_INGEST_URL" ] && echo sim || echo nao)"
+          echo "WORKER_INGEST_TOKEN configurado? $([ -n "$WORKER_INGEST_TOKEN" ] && echo sim || echo nao)"
+
       - name: Executar agente
         env:
           WC_BASE_URL: ${{ secrets.WC_BASE_URL }}
@@ -34,15 +43,17 @@ jobs:
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           WORKER_INGEST_URL: ${{ secrets.WORKER_INGEST_URL }}
           WORKER_INGEST_TOKEN: ${{ secrets.WORKER_INGEST_TOKEN }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: python agent.py
 
       - name: Salvar arquivos de estado
         run: |
           git config user.name "monitor-bot"
           git config user.email "monitor-bot@users.noreply.github.com"
+
+          BRANCH_NAME="${GITHUB_REF_NAME}"
 
           git add state/seen.json state/ref_cache.json
 
@@ -52,6 +63,4 @@ jobs:
           fi
 
           git commit -m "Update state"
-
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git push origin "HEAD:$BRANCH_NAME"
