@@ -73,6 +73,26 @@ MAX_PENDING_EMAILS = 20
 
 EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
+# ==============================
+# CONTROLE DE PENALIDADE
+# ==============================
+
+MAX_PENALTY_DROP = 12  # evita que penalização destrua o score
+
+def calcular_score_decisao(raw_score, final_score):
+    """
+    Evita que penalizações matem um bom match
+    """
+
+    if raw_score is None:
+        return final_score
+
+    limite_inferior = raw_score - MAX_PENALTY_DROP
+
+    score_corrigido = max(final_score, limite_inferior)
+
+    return max(score_corrigido, raw_score)
+
 # =========================
 # CONTROLES
 # =========================
@@ -1654,27 +1674,41 @@ def main():
                 current_top_matches = merge_match(current_top_matches, match_item, limit=TOP_MATCHES_LIMIT)
 
                 if final_score >= REVIEW_THRESHOLD_LOW:
-                    severity = "high" if final_score >= REVIEW_THRESHOLD_HIGH else "medium"
-                    alert_item = {
-                        "page": url,
-                        "product": get_ref_product_name(r),
-                        "product_url": get_ref_product_url(r),
-                        "reference_image_url": r.get("reference_image_url", ""),
-                        "image": im,
-                        "score": final_score,
-                        "raw_score": raw_score,
-                        "whole_score": whole_score,
-                        "center_score": center_score,
-                        "theme_overlap": theme_overlap,
-                        "theme_penalty": theme_penalty,
-                        "generic_penalty": generic_penalty,
-                        "dominance_penalty": dominance_penalty,
-                        "page_title": page_context.get("text", ""),
-                        "links": suspicious_links(html),
-                        "severity": severity,
-                    }
-                    alerts = merge_alert(alerts, alert_item)
+                    severity = "high" 
+                    
+                score_decisao = calcular_score_decisao(raw_score, final_score)
 
+if score_decisao >= REVIEW_THRESHOLD_HIGH:
+    alert_item = {
+        "page": url,
+        "product": get_ref_product_name(r),
+        "product_url": get_ref_product_url(r),
+        "image": im,
+        "reference_image_url": r.get("image"),
+        "score": score_decisao,
+        "raw_score": raw_score,
+        "final_score": final_score,
+        "severity": "high",
+        "page_title": page_context.get("text", ""),
+        "links": suspicious_links(html),
+    }
+    alerts = merge_alert(alerts, alert_item)
+
+elif score_decisao >= REVIEW_THRESHOLD_LOW:
+    alert_item = {
+        "page": url,
+        "product": get_ref_product_name(r),
+        "product_url": get_ref_product_url(r),
+        "image": im,
+        "reference_image_url": r.get("image"),
+        "score": score_decisao,
+        "raw_score": raw_score,
+        "final_score": final_score,
+        "severity": "medium",
+        "page_title": page_context.get("text", ""),
+        "links": suspicious_links(html),
+    }
+    alerts = merge_alert(alerts, alert_item)
         log(
             f"Parcial -> páginas com imagens: {pages_with_images}, "
             f"candidatas: {image_candidates_total}, "
