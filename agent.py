@@ -21,13 +21,13 @@ import imagehash
 INITIAL_HASH_FILTER = 52
 
 # Score mínimo para enviar no e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 80
+REVIEW_THRESHOLD_PERCENT = 93
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
 
 # Quantidade máxima de imagens candidatas por página suspeita
-MAX_IMAGES_PER_SUSPECT_PAGE = 8
+MAX_IMAGES_PER_SUSPECT_PAGE = 4
 
 # Quantidade máxima de páginas por execução
 MAX_PAGES_PER_RUN = 15
@@ -39,8 +39,8 @@ CACHE_REFRESH_SECONDS = 48 * 60 * 60
 WEEKLY_REPORT_SECONDS = 7 * 24 * 60 * 60
 
 # Filtros mínimos de imagem
-MIN_IMAGE_SIDE = 120
-MIN_IMAGE_AREA = 30000
+MIN_IMAGE_SIDE = 220
+MIN_IMAGE_AREA = 120000
 
 # Timeout das requisições
 REQUEST_TIMEOUT = 12
@@ -926,8 +926,8 @@ def is_noisy_image_candidate(meta: dict) -> tuple[bool, str]:
     if any(x in url for x in [".svg", "favicon", "gravatar"]):
         return True, "url_noise"
 
-  #  if is_probable_preview_or_thumbnail_url(url):
-   #     return True, "thumbnail_hint"
+    if is_probable_preview_or_thumbnail_url(url):
+        return True, "thumbnail_hint"
 
     width = meta.get("width")
     height = meta.get("height")
@@ -1612,26 +1612,26 @@ def main():
                     discard_stats["theme_penalty_applied"] += 1
 
                 if not passes_minimum_coherence_gate(raw_score, theme_overlap, whole_score, center_score):
-    discard_stats["coherence_gate_rejected"] += 1
+                    discard_stats["coherence_gate_rejected"] += 1
 
-    rejected_item = {
-        "page": url,
-        "product": get_ref_product_name(r),
-        "product_url": get_ref_product_url(r),
-        "image": im,
-        "score": item["adjusted_base"],
-        "raw_score": raw_score,
-        "whole_score": whole_score,
-        "center_score": center_score,
-        "theme_overlap": theme_overlap,
-        "theme_penalty": theme_penalty,
-        "generic_penalty": generic_penalty,
-        "dominance_penalty": dominance_penalty,
-        "page_title": page_context.get("text", ""),
-    }
-
-    top_matches = merge_match(top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
-    continue
+                    rejected_item = {
+                        "page": url,
+                        "product": get_ref_product_name(r),
+                        "product_url": get_ref_product_url(r),
+                        "reference_image_url": r.get("reference_image_url", ""),
+                        "image": im,
+                        "score": item["adjusted_base"],
+                        "raw_score": raw_score,
+                        "whole_score": whole_score,
+                        "center_score": center_score,
+                        "theme_overlap": theme_overlap,
+                        "theme_penalty": theme_penalty,
+                        "generic_penalty": generic_penalty,
+                        "dominance_penalty": dominance_penalty,
+                        "page_title": page_context.get("text", ""),
+                    }
+                    top_matches = merge_match(top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
+                    continue
 
                 final_score = max(
                     0.0,
