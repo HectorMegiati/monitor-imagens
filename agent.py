@@ -21,7 +21,8 @@ import imagehash
 INITIAL_HASH_FILTER = 52
 
 # Score mínimo para enviar no e-mail de revisão manual
-REVIEW_THRESHOLD_PERCENT = 93
+REVIEW_THRESHOLD_HIGH = 80   # suspeita forte
+REVIEW_THRESHOLD_LOW = 60    # suspeita moderada
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
@@ -74,7 +75,7 @@ EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
 
 EMAIL_TESTE = False
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -1193,6 +1194,7 @@ def build_case_payload(alerts: list[dict]) -> dict:
             "match_type": "composite_hash",
             "source": "google_alerts_rss",
             "notes": " ; ".join(notes_parts),
+            "severity": item.get("severity", "medium"),
             "status": "pending",
         })
 
@@ -1665,11 +1667,13 @@ def main():
                 }
                 top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
 
-                if final_score >= REVIEW_THRESHOLD_PERCENT:
+                if final_score >= REVIEW_THRESHOLD_LOW:
+                    severity = "high" if final_score >= REVIEW_THRESHOLD_HIGH else "medium"
                     alert_item = {
                         "page": url,
                         "product": get_ref_product_name(r),
                         "product_url": get_ref_product_url(r),
+                        "reference_image_url": r.get("reference_image_url", ""),
                         "image": im,
                         "score": final_score,
                         "raw_score": raw_score,
@@ -1681,6 +1685,7 @@ def main():
                         "dominance_penalty": dominance_penalty,
                         "page_title": page_context.get("text", ""),
                         "links": suspicious_links(html),
+                        "severity": severity,
                     }
                     alerts = merge_alert(alerts, alert_item)
 
@@ -1725,7 +1730,7 @@ def main():
     for line in format_match_list(weekly["top_matches"]).splitlines():
         log(line)
 
-    log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_PERCENT}%): {len(alerts)}")
+    log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_LOW}%): {len(alerts)}")
 
     send_cases_to_worker(alerts)
     maybe_send_test_report(state)
