@@ -34,6 +34,8 @@ jobs:
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          WORKER_INGEST_URL: ${{ secrets.WORKER_INGEST_URL }}
+          WORKER_INGEST_TOKEN: ${{ secrets.WORKER_INGEST_TOKEN }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: python agent.py
 
