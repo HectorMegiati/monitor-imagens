@@ -22,7 +22,7 @@ INITIAL_HASH_FILTER = 52
 
 # Score mínimo para enviar no e-mail de revisão manual
 REVIEW_THRESHOLD_HIGH = 80   # suspeita forte
-REVIEW_THRESHOLD_LOW = 60    # suspeita moderada
+REVIEW_THRESHOLD_LOW = 55    # suspeita moderada
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
