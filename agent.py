@@ -2,14 +2,12 @@ import os
 import json
 import time
 import re
-import smtplib
 from io import BytesIO
 from urllib.parse import urlparse, urljoin, parse_qs, unquote
 
 import requests
 import feedparser
 from bs4 import BeautifulSoup
-from email.mime.text import MIMEText
 from PIL import Image
 import imagehash
 
@@ -20,13 +18,8 @@ import imagehash
 # Score mínimo para começar a considerar internamente um match
 INITIAL_HASH_FILTER = 52
 
-# Score mínimo para enviar para a interface web / revisão manual
-REVIEW_THRESHOLD_HIGH = 80   # suspeita forte
-REVIEW_THRESHOLD_LOW = 55    # suspeita moderada
-
-# Força o envio do melhor caso da execução quando nenhum alerta atingir o threshold
-FORCE_SEND_BEST_CURRENT_WHEN_NO_ALERTS = True
-FORCE_SEND_MIN_SCORE = INITIAL_HASH_FILTER
+# Score mínimo para enviar no e-mail de revisão manual
+REVIEW_THRESHOLD_PERCENT = 93
 
 # Quantidade de imagens por produto do WooCommerce usadas como referência
 IMAGES_PER_PRODUCT = 3
@@ -56,7 +49,7 @@ TOP_SCORES_LIMIT = 5
 
 # Regras de penalização / coerência
 GENERIC_MATCH_SPREAD_LIMIT = 3
-GENERIC_MATCH_SPREAD_PENALTY = 4.0
+GENERIC_MATCH_SPREAD_PENALTY = 8.0
 NO_THEME_OVERLAP_PENALTY = 6.0
 LOW_THEME_OVERLAP_PENALTY = 3.0
 
@@ -66,40 +59,13 @@ RAW_SCORE_FOR_THEMELESS_MATCH = 72.0
 DOMINANCE_MIN_DIFF = 5.0
 AMBIGUOUS_MATCH_PENALTY = 7.0
 
-# Configurações de robustez do e-mail
-EMAIL_SEND_MAX_ATTEMPTS = 3
-EMAIL_RETRY_DELAY_SECONDS = 8
-MAX_PENDING_EMAILS = 20
-
-EMAIL_DESTINATION = "guilhermefariadeangeli@gmail.com"
-
-# ==============================
-# CONTROLE DE PENALIDADE
-# ==============================
-
-MAX_PENALTY_DROP = 12  # evita que penalização destrua o score
-
-def calcular_score_decisao(raw_score, final_score):
-    """
-    Evita que penalizações matem um bom match
-    """
-
-    if raw_score is None:
-        return final_score
-
-    limite_inferior = raw_score - MAX_PENALTY_DROP
-
-    score_corrigido = max(final_score, limite_inferior)
-
-    return max(score_corrigido, raw_score)
 
 # =========================
 # CONTROLES
 # =========================
 
-EMAIL_TESTE = False
 RESETAR_CACHE = False
-RESETAR_LINKS_VISTOS = True
+RESETAR_LINKS_VISTOS = False
 
 # =========================
 # PATHS
@@ -270,13 +236,6 @@ WC_BASE_URL = os.getenv("WC_BASE_URL", "").rstrip("/")
 WC_CONSUMER_KEY = os.getenv("WC_CONSUMER_KEY", "")
 WC_CONSUMER_SECRET = os.getenv("WC_CONSUMER_SECRET", "")
 
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USER = os.getenv("EMAIL_USER", "")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
-
-WORKER_INGEST_URL = os.getenv("WORKER_INGEST_URL", "").strip()
-WORKER_INGEST_TOKEN = os.getenv("WORKER_INGEST_TOKEN", "").strip()
 
 USER_AGENT = {
     "User-Agent": "Mozilla/5.0"
@@ -461,122 +420,6 @@ def unwrap_google_url(url: str) -> str:
         return url
     except Exception:
         return url
-
-# =========================
-# EMAIL ROBUSTO
-# =========================
-
-def send_email(subject: str, body: str, max_attempts: int = EMAIL_SEND_MAX_ATTEMPTS) -> bool:
-    log(f"Enviando e-mail: {subject}")
-
-    if not EMAIL_HOST or not EMAIL_USER or not EMAIL_PASSWORD:
-        log("ERRO E-MAIL: EMAIL_HOST / EMAIL_USER / EMAIL_PASSWORD não configurados.")
-        return False
-
-    last_error = None
-
-    for attempt in range(1, max_attempts + 1):
-        smtp_conn = None
-        try:
-            msg = MIMEText(body, "plain", "utf-8")
-            msg["Subject"] = subject
-            msg["From"] = EMAIL_USER
-            msg["To"] = EMAIL_DESTINATION
-
-            smtp_conn = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-            smtp_conn.ehlo()
-            smtp_conn.starttls()
-            smtp_conn.ehlo()
-            smtp_conn.login(EMAIL_USER, EMAIL_PASSWORD)
-            smtp_conn.sendmail(EMAIL_USER, [EMAIL_DESTINATION], msg.as_string())
-            smtp_conn.quit()
-
-            log("E-mail enviado com sucesso.")
-            return True
-
-        except smtplib.SMTPAuthenticationError as e:
-            last_error = e
-            log(f"ERRO SMTP AUTH na tentativa {attempt}/{max_attempts}: {e}")
-            if smtp_conn:
-                try:
-                    smtp_conn.quit()
-                except Exception:
-                    pass
-            break
-
-        except smtplib.SMTPException as e:
-            last_error = e
-            log(f"ERRO SMTP na tentativa {attempt}/{max_attempts}: {e}")
-            if smtp_conn:
-                try:
-                    smtp_conn.quit()
-                except Exception:
-                    pass
-
-        except Exception as e:
-            last_error = e
-            log(f"ERRO AO ENVIAR E-MAIL na tentativa {attempt}/{max_attempts}: {e}")
-            if smtp_conn:
-                try:
-                    smtp_conn.quit()
-                except Exception:
-                    pass
-
-        if attempt < max_attempts:
-            log(f"Aguardando {EMAIL_RETRY_DELAY_SECONDS}s antes de nova tentativa de envio.")
-            time.sleep(EMAIL_RETRY_DELAY_SECONDS)
-
-    log(f"Falha definitiva no envio do e-mail: {subject} | Último erro: {last_error}")
-    return False
-
-def build_pending_email(key: str, subject: str, body: str, kind: str) -> dict:
-    return {
-        "key": key,
-        "subject": subject,
-        "body": body,
-        "kind": kind,
-        "created_at": now(),
-        "attempts": 0,
-    }
-
-def enqueue_pending_email(state: dict, key: str, subject: str, body: str, kind: str) -> None:
-    pending = state.setdefault("pending_emails", [])
-
-    for item in pending:
-        if item.get("key") == key:
-            log(f"E-mail pendente já existe na fila: {key}")
-            return
-
-    pending.append(build_pending_email(key, subject, body, kind))
-
-    if len(pending) > MAX_PENDING_EMAILS:
-        pending[:] = pending[-MAX_PENDING_EMAILS:]
-
-    log(f"E-mail adicionado à fila de pendências: {key}")
-
-def flush_pending_emails(state: dict) -> dict:
-    pending = state.get("pending_emails", [])
-    if not pending:
-        return state
-
-    log(f"Tentando reenviar {len(pending)} e-mail(s) pendente(s).")
-
-    remaining = []
-    for item in pending:
-        subject = item.get("subject", "(sem assunto)")
-        body = item.get("body", "")
-        key = item.get("key", "")
-        item["attempts"] = int(item.get("attempts", 0)) + 1
-
-        ok = send_email(subject, body)
-        if ok:
-            log(f"E-mail pendente reenviado com sucesso: {key}")
-        else:
-            log(f"E-mail pendente permaneceu na fila: {key}")
-            remaining.append(item)
-
-    state["pending_emails"] = remaining
-    return state
 
 # =========================
 # IMAGEM
@@ -779,7 +622,6 @@ def build_refs() -> list[dict]:
                 refs.append({
                     "product": p.get("name", "(sem nome)"),
                     "url": p.get("permalink", ""),
-                    "reference_image_url": src,
                     "whole_phash": str(views["whole"][0]),
                     "whole_dhash": str(views["whole"][1]),
                     "whole_whash": str(views["whole"][2]),
@@ -1117,38 +959,23 @@ def adjusted_confidence(raw_score: float, page_context: dict, ref: dict) -> tupl
     penalty = 0.0
 
     if overlap >= 1:
-        boost += min(overlap * 1.2, 4.0)
+        boost += min(overlap * 1.0, 3.0)
     elif ref.get("_tokens"):
         penalty += NO_THEME_OVERLAP_PENALTY
     else:
         penalty += LOW_THEME_OVERLAP_PENALTY
 
     if ref.get("_token_count", 0) == 0:
-        penalty += 1.0
-
-    if raw_score >= 70.0:
-        penalty = max(0.0, penalty - 1.5)
-    elif raw_score >= 64.0:
-        penalty = max(0.0, penalty - 0.5)
+        penalty += 2.0
 
     adjusted = raw_score + boost - penalty
     adjusted = max(0.0, min(100.0, adjusted))
     return adjusted, overlap, penalty
 
-def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int, whole_score: float, center_score: float) -> bool:
+def passes_minimum_coherence_gate(raw_score: float, theme_overlap: int) -> bool:
     if theme_overlap >= MIN_THEME_OVERLAP_FOR_NORMAL_MATCH:
         return True
-
-    if raw_score >= 55.0:
-        return True
-
-    if center_score >= 60.0:
-        return True
-
-    if whole_score >= 62.0 and center_score >= 58.0:
-        return True
-
-    return False
+    return raw_score >= RAW_SCORE_FOR_THEMELESS_MATCH
 
 def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
     if len(sorted_results) < 2:
@@ -1161,85 +988,6 @@ def dominance_penalty_for_ranked_results(sorted_results: list[dict]) -> float:
     if diff < DOMINANCE_MIN_DIFF:
         return AMBIGUOUS_MATCH_PENALTY
     return 0.0
-
-
-# =========================
-# WORKER / INTERFACE WEB
-# =========================
-
-def make_case_id(suspect_page_url: str, product_url: str, suspect_image_url: str) -> str:
-    base = f"{suspect_page_url}|{product_url}|{suspect_image_url}"
-    import hashlib
-    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:24]
-
-def build_case_payload(alerts: list[dict]) -> dict:
-    cases = []
-    for item in alerts:
-        suspect_page_url = item.get("page", "")
-        product_url = item.get("product_url", "")
-        suspect_image_url = item.get("image", "")
-        reference_image_url = item.get("reference_image_url", "")
-        product_name = item.get("product", "")
-        score = float(item.get("score", 0))
-        match_type = item.get("match_type", "hash")
-        source = item.get("source", "rss")
-        notes = item.get("notes", "")
-        severity = item.get("severity", "medium")
-
-        case_id = item.get("id") or make_case_id(
-            suspect_page_url=suspect_page_url,
-            product_url=product_url,
-            suspect_image_url=suspect_image_url,
-        )
-
-        cases.append({
-            "id": case_id,
-            "suspect_image_url": suspect_image_url,
-            "reference_image_url": reference_image_url,
-            "suspect_page_url": suspect_page_url,
-            "product_url": product_url,
-            "product_name": product_name,
-            "score": score,
-            "score_percent": score,
-            "match_type": match_type,
-            "source": source,
-            "notes": notes,
-            "severity": severity,
-            "status": "pending",
-        })
-    return {"cases": cases}
-
-def send_cases_to_worker(alerts: list[dict]) -> None:
-    if not WORKER_INGEST_URL:
-        log("WORKER_INGEST_URL não configurado. Pulando envio para interface web.")
-        return
-
-    if not WORKER_INGEST_TOKEN:
-        log("WORKER_INGEST_TOKEN não configurado. Pulando envio para interface web.")
-        return
-
-    payload = build_case_payload(alerts)
-
-    if not payload["cases"]:
-        log("Nenhum caso para enviar ao Worker.")
-        return
-
-    try:
-        response = requests.post(
-            WORKER_INGEST_URL,
-            headers={
-                "Content-Type": "application/json",
-                "X-Ingest-Token": WORKER_INGEST_TOKEN,
-            },
-            json=payload,
-            timeout=30,
-        )
-        log(f"Worker ingest status: {response.status_code}")
-        log(f"Worker ingest body: {response.text}")
-        response.raise_for_status()
-        log(f"Casos enviados para interface web: {len(payload['cases'])}")
-    except Exception as e:
-        log(f"Falha ao enviar casos para o Worker: {e}")
 
 # =========================
 # STATE
@@ -1268,11 +1016,7 @@ def load_state() -> dict:
     if "top" in weekly and not weekly.get("top_scores"):
         weekly["top_scores"] = weekly["top"]
 
-    pending_emails = state.get("pending_emails")
-    if pending_emails is None:
-        pending_emails = []
-
-    return {"seen": seen, "weekly": weekly, "pending_emails": pending_emails}
+    return {"seen": seen, "weekly": weekly}
 
 def save_state(state: dict) -> None:
     save_json(SEEN_FILE, state)
@@ -1372,39 +1116,12 @@ def build_report_body(title: str, weekly: dict) -> str:
 
     return body
 
-def maybe_send_test_report(state: dict) -> None:
-    if not EMAIL_TESTE:
-        return
-
-    subject = "Relatório Semanal - Monitoramento (TESTE)"
-    body = build_report_body(
-        "Relatório Semanal do Agente de Monitoramento (TESTE)",
-        state["weekly"],
-    ) + "\nEste é um envio de teste.\nDepois do teste, volte EMAIL_TESTE para False no arquivo agent.py.\n"
-
-    ok = send_email(subject, body)
-    if not ok:
-        log("Falha no envio do relatório de teste. O processo continuará sem interrupção.")
-
-def maybe_send_weekly_report(state: dict) -> dict:
+def maybe_rotate_weekly_report(state: dict) -> dict:
     if now() - state["weekly"]["start"] < WEEKLY_REPORT_SECONDS:
         return state
 
-    subject = "Relatório Semanal - Monitoramento"
-    body = build_report_body(
-        "Relatório Semanal do Agente de Monitoramento",
-        state["weekly"],
-    )
-
-    weekly_key = f"weekly:{state['weekly'].get('start', 0)}"
-
-    ok = send_email(subject, body)
-    if ok:
-        state["weekly"] = build_default_weekly()
-        return state
-
-    log("Falha no envio do relatório semanal. O relatório permanecerá acumulado para nova tentativa.")
-    enqueue_pending_email(state, weekly_key, subject, body, "weekly")
+    log("Fechando janela semanal e reiniciando acumuladores.")
+    state["weekly"] = build_default_weekly()
     return state
 
 # =========================
@@ -1433,13 +1150,9 @@ def main():
     whitelist = load_lines(WHITELIST_FILE)
     state = load_state()
 
-    # tenta reenviar pendências logo no começo
-    state = flush_pending_emails(state)
-
     log(f"Feeds carregados: {len(feeds)}")
     log(f"Whitelist entries: {len(whitelist)}")
     log(f"Links já vistos (cache): {len(state['seen'])}")
-    log(f"E-mails pendentes na fila: {len(state.get('pending_emails', []))}")
 
     refs = load_cache()
     urls = read_rss(feeds)
@@ -1447,8 +1160,7 @@ def main():
     weekly = state["weekly"]
     best = float(weekly.get("max", 0.0))
     top_scores = weekly.get("top_scores", [])
-    current_top_matches = []
-    weekly_top_matches = weekly.get("top_matches", [])
+    top_matches = weekly.get("top_matches", [])
 
     analyzed = 0
     pages_with_images = 0
@@ -1620,26 +1332,8 @@ def main():
                 if theme_penalty > 0:
                     discard_stats["theme_penalty_applied"] += 1
 
-                if not passes_minimum_coherence_gate(raw_score, theme_overlap, whole_score, center_score):
+                if not passes_minimum_coherence_gate(raw_score, theme_overlap):
                     discard_stats["coherence_gate_rejected"] += 1
-
-                    rejected_item = {
-                        "page": url,
-                        "product": get_ref_product_name(r),
-                        "product_url": get_ref_product_url(r),
-                        "reference_image_url": r.get("reference_image_url", ""),
-                        "image": im,
-                        "score": max(0.0, min(100.0, item["adjusted_base"] - generic_penalty - dominance_penalty)),
-                        "raw_score": raw_score,
-                        "whole_score": whole_score,
-                        "center_score": center_score,
-                        "theme_overlap": theme_overlap,
-                        "theme_penalty": theme_penalty,
-                        "generic_penalty": generic_penalty,
-                        "dominance_penalty": dominance_penalty,
-                        "page_title": page_context.get("text", ""),
-                    }
-                    current_top_matches = merge_match(current_top_matches, rejected_item, limit=TOP_MATCHES_LIMIT)
                     continue
 
                 final_score = max(
@@ -1671,44 +1365,27 @@ def main():
                     "dominance_penalty": dominance_penalty,
                     "page_title": page_context.get("text", ""),
                 }
-                current_top_matches = merge_match(current_top_matches, match_item, limit=TOP_MATCHES_LIMIT)
+                top_matches = merge_match(top_matches, match_item, limit=TOP_MATCHES_LIMIT)
 
-                if final_score >= REVIEW_THRESHOLD_LOW:
-                    severity = "high" 
-                    
-                score_decisao = calcular_score_decisao(raw_score, final_score)
+                if final_score >= REVIEW_THRESHOLD_PERCENT:
+                    alert_item = {
+                        "page": url,
+                        "product": get_ref_product_name(r),
+                        "product_url": get_ref_product_url(r),
+                        "image": im,
+                        "score": final_score,
+                        "raw_score": raw_score,
+                        "whole_score": whole_score,
+                        "center_score": center_score,
+                        "theme_overlap": theme_overlap,
+                        "theme_penalty": theme_penalty,
+                        "generic_penalty": generic_penalty,
+                        "dominance_penalty": dominance_penalty,
+                        "page_title": page_context.get("text", ""),
+                        "links": suspicious_links(html),
+                    }
+                    alerts = merge_alert(alerts, alert_item)
 
-if score_decisao >= REVIEW_THRESHOLD_HIGH:
-    alert_item = {
-        "page": url,
-        "product": get_ref_product_name(r),
-        "product_url": get_ref_product_url(r),
-        "image": im,
-        "reference_image_url": r.get("image"),
-        "score": score_decisao,
-        "raw_score": raw_score,
-        "final_score": final_score,
-        "severity": "high",
-        "page_title": page_context.get("text", ""),
-        "links": suspicious_links(html),
-    }
-    alerts = merge_alert(alerts, alert_item)
-
-elif score_decisao >= REVIEW_THRESHOLD_LOW:
-    alert_item = {
-        "page": url,
-        "product": get_ref_product_name(r),
-        "product_url": get_ref_product_url(r),
-        "image": im,
-        "reference_image_url": r.get("image"),
-        "score": score_decisao,
-        "raw_score": raw_score,
-        "final_score": final_score,
-        "severity": "medium",
-        "page_title": page_context.get("text", ""),
-        "links": suspicious_links(html),
-    }
-    alerts = merge_alert(alerts, alert_item)
         log(
             f"Parcial -> páginas com imagens: {pages_with_images}, "
             f"candidatas: {image_candidates_total}, "
@@ -1725,7 +1402,7 @@ elif score_decisao >= REVIEW_THRESHOLD_LOW:
         reverse=True
     )[:TOP_SCORES_LIMIT]
     weekly["top_matches"] = sort_and_trim_matches(
-        list(weekly.get("top_matches", [])) + current_top_matches,
+        list(weekly.get("top_matches", [])) + top_matches,
         TOP_MATCHES_LIMIT
     )
 
@@ -1746,74 +1423,14 @@ elif score_decisao >= REVIEW_THRESHOLD_LOW:
     for k, v in sorted(discard_stats.items(), key=lambda x: x[0]):
         log(f"- {k}: {v}")
 
-    log("Top matches detalhados da execução atual:")
-    for line in format_match_list(current_top_matches).splitlines():
-        log(line)
-
-    log("Top matches detalhados acumulados da semana:")
+    log("Top matches detalhados:")
     for line in format_match_list(weekly["top_matches"]).splitlines():
         log(line)
 
-    if FORCE_SEND_BEST_CURRENT_WHEN_NO_ALERTS and (not alerts) and current_top_matches:
-        best_current = current_top_matches[0]
-        if float(best_current.get("score", 0.0)) >= FORCE_SEND_MIN_SCORE:
-            forced_alert = {
-                **best_current,
-                "links": [],
-                "severity": "forced_best",
-                "notes": "Enviado automaticamente como melhor caso da execução, abaixo do threshold normal."
-            }
-            alerts = merge_alert(alerts, forced_alert)
-            log(
-                f"Melhor caso da execução enviado de forma forçada: "
-                f"{forced_alert.get('score', 0):.1f}% | "
-                f"{forced_alert.get('page', '')}"
-            )
+    log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_PERCENT}%): {len(alerts)}")
 
-    log(f"Casos enviados para revisão manual (>= {REVIEW_THRESHOLD_LOW}%): {len(alerts)}")
 
-    send_cases_to_worker(alerts)
-    maybe_send_test_report(state)
-
-    if alerts:
-        body = (
-            "Candidatos com maior semelhança para revisão manual\n\n"
-            "Observação: estes casos representam triagem automática. "
-            "Revise manualmente antes de considerar qualquer ação.\n\n"
-        )
-
-        for a in alerts:
-            body += f"Página suspeita: {a['page']}\n"
-            body += f"Produto de referência: {a['product']}\n"
-            body += f"Seu produto: {a['product_url']}\n"
-            body += f"Imagem suspeita: {a['image']}\n"
-            body += f"Score ajustado: {a['score']:.1f}%\n"
-            if a.get("severity"):
-                body += f"Severidade: {a['severity']}\n"
-            if a.get("notes"):
-                body += f"Observação: {a['notes']}\n"
-            body += f"Score bruto composto: {a['raw_score']:.1f}%\n"
-            body += f"Score imagem inteira: {a['whole_score']:.1f}%\n"
-            body += f"Score recorte central: {a['center_score']:.1f}%\n"
-            body += f"Sobreposição temática: {a['theme_overlap']}\n"
-            body += f"Penalização temática: {a['theme_penalty']:.1f}\n"
-            body += f"Penalização genérica: {a['generic_penalty']:.1f}\n"
-            body += f"Penalização por ambiguidade: {a['dominance_penalty']:.1f}\n"
-            if a.get("page_title"):
-                body += f"Contexto da página: {truncate_text(a['page_title'])}\n"
-            if a["links"]:
-                body += "Links externos potencialmente suspeitos encontrados na página:\n"
-                for l in a["links"]:
-                    body += f"- {l}\n"
-            body += "\n"
-
-        alert_key = f"alerts:{now()}:{len(alerts)}"
-        ok = send_email("Candidatos para Revisão Manual", body)
-        if not ok:
-            log("Falha no envio do e-mail de alertas. O conteúdo será colocado na fila de pendências.")
-            enqueue_pending_email(state, alert_key, "Candidatos para Revisão Manual", body, "alerts")
-
-    state = maybe_send_weekly_report(state)
+    state = maybe_rotate_weekly_report(state)
     save_state(state)
 
 if __name__ == "__main__":
