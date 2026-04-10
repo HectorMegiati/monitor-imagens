@@ -1,29 +1,46 @@
 {
   "seen": [
-    "https://epgrupo.com.br/pascoa-2026-nostalgia-vira-motor-de-consumo-entre-as-marcas/",
+    "https://algomais.com/pascoa-impulsiona-vendas-em-pernambuco-com-alta-de-177-aponta-itau-unibanco/",
     "https://www.tiffi.com.br/kit-de-pascoa-de-casinha-de-coelho-recheado-de-papelaria",
-    "https://www.studiokako.com/artes-para-caneca-feliz-pascoa-chandler-bing-em-png",
     "https://loja.drivedaana.com.br/produto/papeis-digitais-aurora-png-para-imprimir-kit-digital/",
-    "https://artesanou.com.br/produto/vida-de-papel/kit-digital-artes-canecas-dia-das-maes--mae-de-pet-9151/OTY5MTA=",
-    "https://www.mercadolivre.com.br/road2-summit-ar-compressor-com-kit-digital-digital-de-ponos/p/MLB2038468440",
-    "https://www.mercadolivre.com.br/arquivo-digital-coelinho-de-papel-p-kinder-ovo-zip/up/MLBU1146308600",
-    "https://mimosdathay.com.br/topos-de-bolo/page/58/",
-    "https://www.camilatanakakitsdigitais.com/kit-digital-princesinha-sofia",
-    "https://www.virnacriativa.com.br/produto/kit-digital-roblox-rosa/1661673?vid=2354628",
-    "https://www.digitalconveniencia.com.br/caixa-povo-de-pascoa-cx-arte-e-chocolate-chocomundo-kit",
-    "https://djhub.site/maganhati"
+    "https://www.mypikstore.com.br/kit-digital-princesa-cinderela-3d-ilustracoes-png",
+    "https://www.studiokako.com/kit-digital-querido-papai-combo-ilustracoes-e-papeis-em-png",
+    "https://www.mypikstore.com.br/kit-digital-luluca-3d-png-fundo-transparente",
+    "https://globoplay.globo.com/v/14511196/",
+    "https://www.artedigitalgratis.com/2026/04/acervodiadasmaes.html",
+    "https://www.lojadearquivos.com.br/produtos/caixa-coloreti-pascoa-mimos/",
+    "https://mimosdathay.com.br/topos-de-bolo/page/58/"
   ],
   "weekly": {
-    "start": 1775740873,
-    "analyzed": 12,
+    "start": 1775787158,
+    "analyzed": 10,
     "alerts": 0,
-    "max": 42.484375,
+    "max": 54.328125,
     "top_scores": [
-      42.484375,
-      39.515625,
-      32.875
+      54.328125,
+      42.92708333333334,
+      42.692708333333336,
+      42.40625000000001,
+      42.145833333333336
     ],
-    "top_matches": []
+    "top_matches": [
+      {
+        "page": "https://www.mypikstore.com.br/kit-digital-luluca-3d-png-fundo-transparente",
+        "product": "fundo para foto - paisagem fazenda",
+        "product_url": "https://guilhermeangeli.com.br/produto/fundo-para-foto-paisagem-fazenda/",
+        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/08/fundo-scaled.jpg",
+        "image": "https://cdnx.jumpseller.com/digitalstore/image/75606389/kit-digital-luluca-3d.jpg?1775669445",
+        "score": 54.328125,
+        "raw_score": 61.328125,
+        "whole_score": 53.125,
+        "center_score": 64.0625,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 8.0,
+        "dominance_penalty": 0.0,
+        "page_title": "kit digital luluca 3d png e papéis digitais | kit digital luluca 3d - png fundo transparente | kit digital luluca 3d - png fundo transparente | https://www.mypikstore.com.br/kit-digital-luluca-3d-png-fundo-transparente"
+      }
+    ]
   },
   "pending_emails": []
 }
