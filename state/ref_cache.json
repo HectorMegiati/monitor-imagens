@@ -1,8 +1,41 @@
 {
-  "last": 1776517272,
+  "last": 1776565966,
   "refs": [
     {
-      "product": "",
+      "product": "Arquivo Digital Caixinha Dia das Mães",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-caixinha-dia-das-maes/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/mae.png",
+      "whole_phash": "afda24cad0a54ba5",
+      "whole_dhash": "61696e5a8b6b060e",
+      "whole_whash": "bf0f23ffc3010383",
+      "center_phash": "b0a8003f0ad7bb7d",
+      "center_dhash": "8d9b1e543c4c2c98",
+      "center_whash": "4577ffff87860000",
+      "quad_hashes": [
+        {
+          "phash": "bbb2c49c63e36898",
+          "dhash": "0c3c19583a33cdc3",
+          "whash": "ff8f80808890fff1"
+        },
+        {
+          "phash": "96e9ead4b296921c",
+          "dhash": "c803e3cc54c4ec2d",
+          "whash": "fff103060636f607"
+        },
+        {
+          "phash": "f9a4c363b45cb452",
+          "dhash": "02c1b432194b4008",
+          "whash": "fff8d4828080f8f9"
+        },
+        {
+          "phash": "b7e6d893640dcb12",
+          "dhash": "2ccdce664c5afa7c",
+          "whash": "f7370703070f0f1e"
+        }
+      ]
+    },
+    {
+      "product": "Festa Abelhinha",
       "url": "https://guilhermeangeli.com.br/produto/1685/",
       "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-3.png",
       "whole_phash": "acdaa747da25d064",
@@ -35,7 +68,7 @@
       ]
     },
     {
-      "product": "",
+      "product": "Festa Abelhinha",
       "url": "https://guilhermeangeli.com.br/produto/1685/",
       "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/2-2.png",
       "whole_phash": "cb4eb470f895d191",
@@ -68,7 +101,7 @@
       ]
     },
     {
-      "product": "",
+      "product": "Festa Abelhinha",
       "url": "https://guilhermeangeli.com.br/produto/1685/",
       "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/3-4.png",
       "whole_phash": "9fc6b158e2e14be0",
