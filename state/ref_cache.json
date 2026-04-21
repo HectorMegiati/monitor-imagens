@@ -1,6 +1,138 @@
 {
-  "last": 1776691749,
+  "last": 1776738507,
   "refs": [
+    {
+      "product": "Estampas Dia das Mães",
+      "url": "https://guilhermeangeli.com.br/produto/estampas-dia-das-maes/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/6.png",
+      "whole_phash": "94253b111f5a3f1e",
+      "whole_dhash": "aba6a4a4a6a4a531",
+      "whole_whash": "005757567e7e5c14",
+      "center_phash": "af66d5985422d59a",
+      "center_dhash": "6666666666666666",
+      "center_whash": "2333233323b3b3b3",
+      "quad_hashes": [
+        {
+          "phash": "803b3b3f3e746c41",
+          "dhash": "5ddaccccccccccc4",
+          "whash": "0022667676767677"
+        },
+        {
+          "phash": "9e63636ae90d0d35",
+          "dhash": "c78c2c3234343434",
+          "whash": "20061e1f9e9e9e9e"
+        },
+        {
+          "phash": "84c07f96c137d1d6",
+          "dhash": "ccc4c4c4c4cc4c1e",
+          "whash": "6657775777070700"
+        },
+        {
+          "phash": "dc952b6a3996274c",
+          "dhash": "3434343022252523",
+          "whash": "1cfededed8d0d000"
+        }
+      ]
+    },
+    {
+      "product": "Combo Dia das Mães",
+      "url": "https://guilhermeangeli.com.br/produto/combo-dia-das-maes/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/1.png",
+      "whole_phash": "b0428dd98ea179af",
+      "whole_dhash": "6bdc9dbd3d929e36",
+      "whole_whash": "3f28404586c0dfff",
+      "center_phash": "bd227a49835de64c",
+      "center_dhash": "2929aeaed656125d",
+      "center_whash": "8d05170f7f87888f",
+      "quad_hashes": [
+        {
+          "phash": "e19eb0556a66556a",
+          "dhash": "8cbeb2d5c3c6c69f",
+          "whash": "cf7f5f6060626243"
+        },
+        {
+          "phash": "c9f5f62791063f80",
+          "dhash": "ce26d2dada52f5b5",
+          "whash": "f6fa6848480079ff"
+        },
+        {
+          "phash": "e3603d85622b55d7",
+          "dhash": "df8b8bc3c5c64f0e",
+          "whash": "41616061f0f3e7e7"
+        },
+        {
+          "phash": "944ece934638cf87",
+          "dhash": "b52525b4ccda9a6c",
+          "whash": "7c1010402eefcfbf"
+        }
+      ]
+    },
+    {
+      "product": "Combo Dia das Mães",
+      "url": "https://guilhermeangeli.com.br/produto/combo-dia-das-maes/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/2-1.png",
+      "whole_phash": "9550fc074b5a36a7",
+      "whole_dhash": "6ab636db4676b632",
+      "whole_whash": "3e5e06082306dfdf",
+      "center_phash": "a814ade0de5f9991",
+      "center_dhash": "a2a738308593cb73",
+      "center_whash": "3b130ec8e54361bf",
+      "quad_hashes": [
+        {
+          "phash": "adb39e6a15e46a44",
+          "dhash": "2dccd6d6de136732",
+          "whash": "076f6f6f0241911f"
+        },
+        {
+          "phash": "d6d662499e69813d",
+          "dhash": "c94cbc3c3cc20f6d",
+          "whash": "e4f4de9e1e7a0007"
+        },
+        {
+          "phash": "bf189cc7c0354de4",
+          "dhash": "72383b1cc7674f0e",
+          "whash": "191c8886f3e387e7"
+        },
+        {
+          "phash": "916e67e462492db5",
+          "dhash": "4f7c34909cbada4c",
+          "whash": "000e0e1cce5fef8f"
+        }
+      ]
+    },
+    {
+      "product": "Combo Dia das Mães",
+      "url": "https://guilhermeangeli.com.br/produto/combo-dia-das-maes/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/3.png",
+      "whole_phash": "95498df6689ad392",
+      "whole_dhash": "6ae2c8899cccae32",
+      "whole_whash": "18327c0044f6ff9f",
+      "center_phash": "b659a2ab684cdb25",
+      "center_dhash": "bcae1c942e4d4c4d",
+      "center_whash": "5ef6060002a7f7e7",
+      "quad_hashes": [
+        {
+          "phash": "87b260be0679565b",
+          "dhash": "2d7ed85a626ad3c2",
+          "whash": "070f263f3f3f4860"
+        },
+        {
+          "phash": "c6d22bc4cd331d1e",
+          "dhash": "c9cc0c44e4e6ee67",
+          "whash": "e4f486faf0f22231"
+        },
+        {
+          "phash": "d6482b2351b7b99a",
+          "dhash": "cae1a4ecc04c4c0e",
+          "whash": "20307f7e7c8787c2"
+        },
+        {
+          "phash": "874e28ad06fcf692",
+          "dhash": "67e3c9604c5a1a4c",
+          "whash": "00103c3c3effff06"
+        }
+      ]
+    },
     {
       "product": "Arquivo Digital Caixinha Dia das Mães",
       "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-caixinha-dia-das-maes/",
