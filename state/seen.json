@@ -1,29 +1,47 @@
 {
   "seen": [
-    "https://nogridarquivosdigitais.com.br/kit-digital-pascoa-do-coelhinho/p",
-    "https://nogridarquivosdigitais.com.br/kit-digital-pascoa/p",
-    "https://www.youtube.com/@becreativekitsdigitais9074/shorts",
-    "https://atarde.com.br/colunistas/tempopresente/emergencia-contra-acidentes-e-doencas-1386673",
-    "https://www.benditoarquivo.com/arquivo-de-corte-safari-17",
+    "https://pt.pngtree.com/freepng/pastel-dragon-easter-eggs-in-a-basket-with-candies_24017640.html",
     "https://www.karolsarquivos.com/kit-digital-dia-das-maes-2026",
-    "https://nogridarquivosdigitais.com.br/completo-kit-digital-encadernacao-forte-corajosa-ana-flor/p",
-    "https://nogridarquivosdigitais.com.br/kit-digital-abencoadas/p",
-    "https://nogridarquivosdigitais.com.br/kit-digital-aniversario/p",
-    "https://www.studiokako.com/artes-para-para-uso-exclusivo-de-uma-mae-incrivel-em-png"
+    "https://www.studiokako.com/artes-para-para-uso-exclusivo-de-uma-mae-incrivel-em-png",
+    "https://www.studiokako.com/artes-para-caneca-dia-das-maes-com-e-sem-foto-em-png",
+    "https://www.studiokako.com/artes-para-caneca-mae-que-ama-viajar-em-png",
+    "https://www.studiokako.com/artes-para-caneca-mae-de-milhoes-dia-das-maes-em-png",
+    "https://www.studiokako.com/artes-para-caneca-deus-e-bom-o-tempo-todo-dia-das-maes-em-png",
+    "https://tg-cat.com/@kitdigitalkely?lang=ru",
+    "https://atarde.com.br/colunistas/tempopresente/emergencia-contra-acidentes-e-doencas-1386673",
+    "https://focoideal.store/home/",
+    "https://nickdesigndigital.com/loja/ilustracoes-santa-catarina-de-sena-kit-digital-carinas-paper/"
   ],
   "weekly": {
-    "start": 1777036662,
-    "analyzed": 10,
+    "start": 1777082845,
+    "analyzed": 11,
     "alerts": 0,
-    "max": 44.90625000000001,
+    "max": 53.130208333333336,
     "top_scores": [
+      53.130208333333336,
+      45.63020833333334,
+      45.55208333333334,
       44.90625000000001,
-      43.73437500000001,
-      43.161458333333336,
-      41.41666666666667,
-      40.79166666666667
+      43.73437500000001
     ],
-    "top_matches": []
+    "top_matches": [
+      {
+        "page": "https://www.studiokako.com/artes-para-caneca-deus-e-bom-o-tempo-todo-dia-das-maes-em-png",
+        "product": "Arquivo Digital Caixinha Dia das Mães",
+        "product_url": "https://guilhermeangeli.com.br/produto/arquivo-digital-caixinha-dia-das-maes/",
+        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/mae.png",
+        "image": "https://cdnx.jumpseller.com/studio-kako1/image/76041371/.png?1776970657",
+        "score": 53.130208333333336,
+        "raw_score": 60.130208333333336,
+        "whole_score": 64.58333333333333,
+        "center_score": 57.8125,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 8.0,
+        "dominance_penalty": 0.0,
+        "page_title": "artes para caneca deus é bom o tempo todo dia das mães em pn | artes para caneca deus é bom o tempo todo dia das mães em png | artes para caneca deus é bom o tempo todo dia das mães em png | https://www.studiokako.com/artes-para-caneca-deus-e-bom-o-tempo-todo-dia-das-maes-em-png"
+      }
+    ]
   },
   "pending_emails": []
 }
