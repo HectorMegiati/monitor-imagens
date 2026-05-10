@@ -1,6 +1,105 @@
 {
-  "last": 1778332606,
+  "last": 1778381269,
   "refs": [
+    {
+      "product": "Arquivo Digital Coleção Cheiro de Rosas",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/6.jpg",
+      "whole_phash": "a4926d993c375ba2",
+      "whole_dhash": "ab8e8c4c96160e26",
+      "whole_whash": "c7e7e787c7c30300",
+      "center_phash": "acb3d3dc6c846662",
+      "center_dhash": "0e1b8ea7a7b6d443",
+      "center_whash": "ffcf4753531a1801",
+      "quad_hashes": [
+        {
+          "phash": "c1827d5a8e9d5a69",
+          "dhash": "88cfc8d0d19892c2",
+          "whash": "f8657c7c7848cae0"
+        },
+        {
+          "phash": "9ee03f40c8df073c",
+          "dhash": "e78c7ef9b9f5747c",
+          "whash": "0707071f5d1e9e1e"
+        },
+        {
+          "phash": "d5a95554e9b36834",
+          "dhash": "d2c2c38b80244c04",
+          "whash": "eaf2e3e3e0f006e0"
+        },
+        {
+          "phash": "97ce3f8978936094",
+          "dhash": "747c2c2c7cdc7e1e",
+          "whash": "9f9fa78e0e0e0f02"
+        }
+      ]
+    },
+    {
+      "product": "Arquivo Digital Coleção Cheiro de Rosas",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/7.jpg",
+      "whole_phash": "e9a06c9f2d9a6e81",
+      "whole_dhash": "ab979692d2643a32",
+      "whole_whash": "c3f7cf5a3b340e00",
+      "center_phash": "dbb925d58cfcc0c0",
+      "center_dhash": "335b1939610882a5",
+      "center_whash": "db098d9dfcf8e001",
+      "quad_hashes": [
+        {
+          "phash": "c2513f7a9ccd9262",
+          "dhash": "88cfc8e3cdc96767",
+          "whash": "c060707f7175331f"
+        },
+        {
+          "phash": "b02e27499edf0f05",
+          "dhash": "e6cf2d39b595d84c",
+          "whash": "030707dd5c4cecee"
+        },
+        {
+          "phash": "bc9c4f2351ad4a35",
+          "dhash": "6724b4919c4b4604",
+          "whash": "bf9f5f5fc2010380"
+        },
+        {
+          "phash": "f5cb37c159a40897",
+          "dhash": "c82ccc3151d60c1e",
+          "whash": "eee6e6d0287ec700"
+        }
+      ]
+    },
+    {
+      "product": "Arquivo Digital Coleção Cheiro de Rosas",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/9.jpg",
+      "whole_phash": "9de0611f6c9772b0",
+      "whole_dhash": "abba9c766e6c6a96",
+      "whole_whash": "037f7e1e1f1e1e00",
+      "center_phash": "80fff0878f8080ff",
+      "center_dhash": "5e7febf3c7cfdf8f",
+      "center_whash": "ff8f031b13070f07",
+      "quad_hashes": [
+        {
+          "phash": "a3c13fc88e38c75c",
+          "dhash": "89cfc9ede5cd3d2c",
+          "whash": "4060707f7f770707"
+        },
+        {
+          "phash": "9627250bcfc80f1f",
+          "dhash": "e60cace5fd9cb474",
+          "whash": "030707fc7c5c5c9e"
+        },
+        {
+          "phash": "bb3bc69c382c3839",
+          "dhash": "3d4c1a1b181c4f06",
+          "whash": "87878f8f8f8f80e0"
+        },
+        {
+          "phash": "95cb3cc67a817a85",
+          "dhash": "3474f4f4f0ccfe1e",
+          "whash": "9e3e7e7e3e460600"
+        }
+      ]
+    },
     {
       "product": "Estampas Dia das Mães",
       "url": "https://guilhermeangeli.com.br/produto/estampas-dia-das-maes/",
