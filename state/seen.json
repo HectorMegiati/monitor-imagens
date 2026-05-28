@@ -1,31 +1,43 @@
 {
   "seen": [
-    "https://www.midiajur.com.br/economia/azeite-vendido-como-extravirgem-e-desclassificado-por-misturar-outros-oleos/82660",
-    "https://drivedacrisoficial.com/shop/datas-comemorativas/dia-dos-namorados/10-artes-arquivo-digital-pdf-prontos-para-impressao-marcador-de-pagina-biblia-livro-dia-dos-namorados/",
-    "https://drivedacrisoficial.com/shop/encadernacao/albuns/kit-digital-namorados-2026/",
+    "https://horadafesta.com.br/topo-de-bolo-canarinho-pistola-mascote-do-brasil-copa-do-mundo-2026-desenho-simples-para-decorar-sua-festa-de-aniversario-tematica-png/",
+    "https://colorir360.com.br/arvore-de-natal/desenho-de-arvore-de-natal-imprimivel-para-colorir/",
+    "https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/NDk5Nzg1",
     "https://www.multiprodutosdigitais.com/livro-de-colorir-adultos-antiestresse/p",
     "https://x.com/BARMYSTREAM/status/2059360767237837227",
     "https://gabiquesada.com.br/produtos/kit-digital-dia-das-maes-mimos-corporativos/",
-    "https://drivedacrisoficial.com/shop/arquivos-de-corte/caixinhas/arquivos-digitais-printables-completo-imagens-e-fundos-mensagens/",
-    "https://amaranttodesign.com.br/produto/kit-fotografia-namorados-2026/",
-    "https://lojadearquivos.com/produto/sereias-kit-digital/",
-    "https://artesanou.com.br/produto/corte-e-recorte-arquivos-digitais/arquivo-corte-digital-caixas-dia-das-maes-kit-floral-f2547f/MTIyOTA0Mg==",
-    "https://www.mypikstore.com.br/kit-digital-copa-do-mundo-cute-menina-png",
-    "https://www.karolsarquivos.com/arquivo-kit-digital-2026-copa-do-mundo-brilha-brasil"
+    "https://amaranttodesign.com.br/produto/kit-fotografia-namorados-2026/"
   ],
   "weekly": {
-    "start": 1779896014,
-    "analyzed": 12,
+    "start": 1779936642,
+    "analyzed": 7,
     "alerts": 0,
-    "max": 44.07291666666667,
+    "max": 58.13020833333333,
     "top_scores": [
-      44.07291666666667,
-      43.96875000000001,
-      42.11979166666667,
-      40.94791666666667,
-      40.24479166666667
+      58.13020833333333,
+      50.65625,
+      48.598958333333336,
+      47.921875,
+      47.739583333333336
     ],
-    "top_matches": []
+    "top_matches": [
+      {
+        "page": "https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/NDk5Nzg1",
+        "product": "Kit Digital 15 Cores & Estampa de Botões",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-15-cores-estampa-de-botoes/",
+        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/04/1-1.png",
+        "image": "https://artesanou.com.br/assets/images/sem-foto.webp",
+        "score": 58.13020833333333,
+        "raw_score": 65.13020833333333,
+        "whole_score": 61.979166666666664,
+        "center_score": 65.625,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 8.0,
+        "dominance_penalty": 0.0,
+        "page_title": "estampas sublimação canecas pack3 png dia das mães | vitrine artesanou | estampas sublimação canecas pack3 png dia das mães | https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/ndk5nzg1"
+      }
+    ]
   },
   "pending_emails": []
 }
