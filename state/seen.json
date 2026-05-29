@@ -1,44 +1,33 @@
 {
   "seen": [
-    "https://horadafesta.com.br/topo-de-bolo-canarinho-pistola-mascote-do-brasil-copa-do-mundo-2026-desenho-simples-para-decorar-sua-festa-de-aniversario-tematica-png/",
-    "https://colorir360.com.br/arvore-de-natal/desenho-de-arvore-de-natal-imprimivel-para-colorir/",
-    "https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/NDk5Nzg1",
-    "https://drivedacrisoficial.com/shop/kits-digitais/kit-digital-ilustracoes-santa-rita-de-cassia/",
-    "https://aedas.edu.pt/aviso-no-16-2023-matriculas-ou-renovacao-de-matriculas-2-2-2-2-2/",
-    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-dia-das-maes-aquarela-amor-de-mae-6-215d610/MTI5MzkyNQ==",
+    "https://www.estadaomatogrosso.com.br/politica/video-paula-nega-rotulo-de-traidora-apos-exoneracoes-e-cita-compromisso-com-cuiaba/138817",
+    "https://colorir360.com.br/rudolph/desenho-de-rudolph-para-imprimir-natal-imprimivel/",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-dia-das-maes-mothers-day-1be0108/MTI5MzkzOQ==",
     "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-dia-das-maes-aquarela-premium-ccs-1e209b3/MTI5MzkzNQ==",
-    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-png-hello-kitty-aquarela-pague-1-leve-4-1f79818/MTI5NDc2Mw=="
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-dia-das-maes-2025-ilustracoes-e-mimos-png-pdf-1fe29c5/MTI5MzkyMA==",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-png-princesas-disney-06-pague-1-leve-4-1f76d1d/MTI5NDc4NA==",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-festa-no-jardim-lilas-png-jardim-das-fadas-2108c41/MTI5NDE1OA==",
+    "https://drivedacrisoficial.com/shop/kits-digitais/kit-digital-ilustracoes-santa-rita-de-cassia/",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/arquivo-digital-porta-sache-de-cha-dia-das-maes-2026-pdf-png-214fd26/MTI5MzE5MQ==",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-png-hobbit-aquarela-pague-1-leve-4-1f656d4/MTI5NDc2NQ==",
+    "https://artesanou.com.br/produto/favo-de-mel-arquivos/kit-digital-dia-das-maes-aquarela-amor-de-mae-1bd87b7/MTI5MzkyNA==",
+    "https://www.reddit.com/r/empreendedorismo/comments/1tq1tco/kits_digitais_low_ticket_nichados_ainda_têm_saída/",
+    "https://portalsoteropreta.com.br/2026/05/27/movae-chega-a-sao-caetano-com-feira-de-afroempreendedorismo/",
+    "https://estudiomaecriativa.com.br/kits-digitais/"
   ],
   "weekly": {
-    "start": 1779983039,
-    "analyzed": 8,
+    "start": 1780023273,
+    "analyzed": 14,
     "alerts": 0,
-    "max": 58.13020833333333,
+    "max": 46.078125,
     "top_scores": [
-      58.13020833333333,
-      50.65625,
-      48.598958333333336,
-      47.921875,
-      47.739583333333336
+      46.078125,
+      46.00000000000001,
+      45.76562500000001,
+      45.375,
+      45.14062500000001
     ],
-    "top_matches": [
-      {
-        "page": "https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/NDk5Nzg1",
-        "product": "Kit Digital 15 Cores & Estampa de Botões",
-        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-15-cores-estampa-de-botoes/",
-        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/04/1-1.png",
-        "image": "https://artesanou.com.br/assets/images/sem-foto.webp",
-        "score": 58.13020833333333,
-        "raw_score": 65.13020833333333,
-        "whole_score": 61.979166666666664,
-        "center_score": 65.625,
-        "theme_overlap": 1,
-        "theme_penalty": 0.0,
-        "generic_penalty": 8.0,
-        "dominance_penalty": 0.0,
-        "page_title": "estampas sublimação canecas pack3 png dia das mães | vitrine artesanou | estampas sublimação canecas pack3 png dia das mães | https://artesanou.com.br/produto/artes-digitais-sublimacao/estampas-sublimacao-canecas-pack3-png-dia-das-maes-1e2a964/ndk5nzg1"
-      }
-    ]
+    "top_matches": []
   },
   "pending_emails": []
 }
