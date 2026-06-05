@@ -1,5 +1,5 @@
 {
-  "last": 1780585046,
+  "last": 1780630508,
   "refs": [
     {
       "product": "Arquivo Digital Coleção Cheiro de Rosas",
@@ -3073,33 +3073,33 @@
     {
       "product": "4 Embalagens da Fazendinha",
       "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-4-embalagens-da-fazendinha/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/08/2-scaled.png",
-      "whole_phash": "fbe1c5d2c41a94e4",
-      "whole_dhash": "12533531411d5563",
-      "whole_whash": "f8c98199f9858d39",
-      "center_phash": "994b39e7f0114e0f",
-      "center_dhash": "d253f39421641636",
-      "center_whash": "680b197ef8be0a0f",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/08/0.png",
+      "whole_phash": "bbeaa5d2c89510e5",
+      "whole_dhash": "1b511539815d5eb2",
+      "whole_whash": "ffe98089f0040fdb",
+      "center_phash": "994b29e7f011ce0f",
+      "center_dhash": "da5bfb9c216e1e16",
+      "center_whash": "680b1f4cf8b60f0f",
       "quad_hashes": [
         {
-          "phash": "fa8895379a19654d",
-          "dhash": "d20d33392b0f3b37",
-          "whash": "ffe7d185818080fb"
+          "phash": "fac89467ca18655d",
+          "dhash": "c10c2329694f19b5",
+          "whash": "ffefd185a0a088f0"
         },
         {
-          "phash": "e952e79998a499c6",
-          "dhash": "4a8a83b7bb93470f",
-          "whash": "e0e0e0c3c9cbe3e3"
+          "phash": "a99ea79930e499c6",
+          "dhash": "dc4313b7b992c28e",
+          "whash": "ffffe34348486003"
         },
         {
-          "phash": "b8c4977869337835",
-          "dhash": "3324262b33313dda",
-          "whash": "dff7c3c081810f0f"
+          "phash": "e8dc943b7913193c",
+          "dhash": "11a4a48b33b1cd86",
+          "whash": "c8ffd6008191e7c7"
         },
         {
-          "phash": "e927f3a4c4668655",
-          "dhash": "0e1b6ba333a38b94",
-          "whash": "e3819191f9d1c3da"
+          "phash": "e56b33944ca686c7",
+          "dhash": "ce1beba3b2ac8e0c",
+          "whash": "63013030fadfc7e6"
         }
       ]
     },
