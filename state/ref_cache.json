@@ -1,5 +1,5 @@
 {
-  "last": 1782877031,
+  "last": 1782916392,
   "refs": [
     {
       "product": "Arquivo Digital Coleção Cheiro de Rosas",
@@ -268,33 +268,33 @@
     {
       "product": "Festa Abelhinha",
       "url": "https://guilhermeangeli.com.br/produto/1685/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-3.png",
-      "whole_phash": "acdaa747da25d064",
-      "whole_dhash": "8e929633b5220686",
-      "whole_whash": "ffffdb9900020383",
-      "center_phash": "8e9de2f442d02f8d",
-      "center_dhash": "333363706226a0c9",
-      "center_whash": "ffbb1b381012ff00",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-4.png",
+      "whole_phash": "ae0ec3e3f0bc90b8",
+      "whole_dhash": "476537272d4d4f29",
+      "whole_whash": "ff3017138787bf00",
+      "center_phash": "870fd8f66cd8d070",
+      "center_dhash": "67e7e66746468707",
+      "center_whash": "303b3b3303ff6303",
       "quad_hashes": [
         {
-          "phash": "e4db38a4c9ba6499",
-          "dhash": "f2cbcbe7c6c68ea6",
-          "whash": "f8f8e1f373630302"
+          "phash": "b789c8a2e21d5177",
+          "dhash": "c13054760c0c4c4c",
+          "whash": "ffbf0e0687878680"
         },
         {
-          "phash": "bc956e993dc11866",
-          "dhash": "302c0c38183b072f",
-          "whash": "1e0607cfcfcfc181"
+          "phash": "bee185d0957b421b",
+          "dhash": "fc17513f3d25357d",
+          "whash": "ffc300819f9f030f"
         },
         {
-          "phash": "e4a4ac56ab98907f",
-          "dhash": "a6a686d64cc44447",
-          "whash": "c3e2f2ff802080ff"
+          "phash": "f671763601f4899c",
+          "dhash": "4c0c249832242464",
+          "whash": "80e0ffc01cfff700"
         },
         {
-          "phash": "b36ee831e6c1c932",
-          "dhash": "072b2b4c1c1a188c",
-          "whash": "c10180fe0f0f0fff"
+          "phash": "8b9e0f991ee1f0b0",
+          "dhash": "7d6df5313ddbdbd9",
+          "whash": "0f01ff1d1f6f6900"
         }
       ]
     },
