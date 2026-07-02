@@ -1,135 +1,168 @@
 {
-  "last": 1782916392,
+  "last": 1782961369,
   "refs": [
     {
-      "product": "Arquivo Digital Coleção Cheiro de Rosas",
-      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/6.jpg",
-      "whole_phash": "a4926d993c375ba2",
-      "whole_dhash": "ab8e8c4c96160e26",
-      "whole_whash": "c7e7e787c7c30300",
-      "center_phash": "acb3d3dc6c846662",
-      "center_dhash": "0e1b8ea7a7b6d443",
-      "center_whash": "ffcf4753531a1801",
+      "product": "Arquivo Digital Estampas Ursinhos Aviadores",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-estampas-ursinhos-aviadores/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/07/1.png",
+      "whole_phash": "e626915b26a66ee4",
+      "whole_dhash": "6c8d2766626322b6",
+      "whole_whash": "a74383a38080fffe",
+      "center_phash": "ef2cdfd2182892d2",
+      "center_dhash": "6747c72749494949",
+      "center_whash": "a3a3f3c320bcbca8",
       "quad_hashes": [
         {
-          "phash": "c1827d5a8e9d5a69",
-          "dhash": "88cfc8d0d19892c2",
-          "whash": "f8657c7c7848cae0"
+          "phash": "d49b38d53c8da22b",
+          "dhash": "142849542c281434",
+          "whash": "dec8f6d090ded4c0"
         },
         {
-          "phash": "9ee03f40c8df073c",
-          "dhash": "e78c7ef9b9f5747c",
-          "whash": "0707071f5d1e9e1e"
+          "phash": "9cc7439c3c3c623e",
+          "dhash": "34f4cd37343434b1",
+          "whash": "1f3f011f1f1f1f00"
         },
         {
-          "phash": "d5a95554e9b36834",
-          "dhash": "d2c2c38b80244c04",
-          "whash": "eaf2e3e3e0f006e0"
+          "phash": "f67c01855f815d74",
+          "dhash": "142d3d2d2ce5d544",
+          "whash": "80c6c68686ffff04"
         },
         {
-          "phash": "97ce3f8978936094",
-          "dhash": "747c2c2c7cdc7e1e",
-          "whash": "9f9fa78e0e0e0f02"
+          "phash": "d02a9e9d2a9d9e38",
+          "dhash": "3489818190909098",
+          "whash": "1f60606060ffffe0"
         }
       ]
     },
     {
       "product": "Arquivo Digital Coleção Cheiro de Rosas",
       "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/7.jpg",
-      "whole_phash": "e9a06c9f2d9a6e81",
-      "whole_dhash": "ab979692d2643a32",
-      "whole_whash": "c3f7cf5a3b340e00",
-      "center_phash": "dbb925d58cfcc0c0",
-      "center_dhash": "335b1939610882a5",
-      "center_whash": "db098d9dfcf8e001",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/1-3.png",
+      "whole_phash": "b333c9cc349391b9",
+      "whole_dhash": "5b4fdfed2d754729",
+      "whole_whash": "ff000707071fff81",
+      "center_phash": "ae3bd94c46c6c076",
+      "center_dhash": "171b2e67676676a7",
+      "center_whash": "038307030397bfff",
       "quad_hashes": [
         {
-          "phash": "c2513f7a9ccd9262",
-          "dhash": "88cfc8e3cdc96767",
-          "whash": "c060707f7175331f"
+          "phash": "decb94cae893590c",
+          "dhash": "c931505363602426",
+          "whash": "ffff988991101692"
         },
         {
-          "phash": "b02e27499edf0f05",
-          "dhash": "e6cf2d39b595d84c",
-          "whash": "030707dd5c4cecee"
+          "phash": "8ae0df80947f427e",
+          "dhash": "fcd7d53fbcfd717d",
+          "whash": "ff1b00011f1f1b1f"
         },
         {
-          "phash": "bc9c4f2351ad4a35",
-          "dhash": "6724b4919c4b4604",
-          "whash": "bf9f5f5fc2010380"
+          "phash": "b46454de0be60b9b",
+          "dhash": "26b6b61772242464",
+          "whash": "0002d3f39ffff600"
         },
         {
-          "phash": "f5cb37c159a40897",
-          "dhash": "c82ccc3151d60c1e",
-          "whash": "eee6e6d0287ec700"
+          "phash": "8f9e0f8956a954b8",
+          "dhash": "7d756d2d3ddbdbd9",
+          "whash": "1f011fbd9f6f4900"
         }
       ]
     },
     {
       "product": "Arquivo Digital Coleção Cheiro de Rosas",
       "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/9.jpg",
-      "whole_phash": "9de0611f6c9772b0",
-      "whole_dhash": "abba9c766e6c6a96",
-      "whole_whash": "037f7e1e1f1e1e00",
-      "center_phash": "80fff0878f8080ff",
-      "center_dhash": "5e7febf3c7cfdf8f",
-      "center_whash": "ff8f031b13070f07",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/1-1.png",
+      "whole_phash": "9918f8e865c74cea",
+      "whole_dhash": "3b3978fedab0696e",
+      "whole_whash": "0c0d0c020e1fffff",
+      "center_phash": "90099f1e3dacf872",
+      "center_dhash": "f9fcf9b6cc3864d8",
+      "center_whash": "0f0e0d03050f3fff",
       "quad_hashes": [
         {
-          "phash": "a3c13fc88e38c75c",
-          "dhash": "89cfc9ede5cd3d2c",
-          "whash": "4060707f7f770707"
+          "phash": "ac67d494d18b5ac3",
+          "dhash": "0e078f2f1f3f7b74",
+          "whash": "ffc30103070f1f1f"
         },
         {
-          "phash": "9627250bcfc80f1f",
-          "dhash": "e60cace5fd9cb474",
-          "whash": "030707fc7c5c5c9e"
+          "phash": "c4e4b6f2abb9230c",
+          "dhash": "4d66b2d3e1c93464",
+          "whash": "e4f27a7971641c26"
         },
         {
-          "phash": "bb3bc69c382c3839",
-          "dhash": "3d4c1a1b181c4f06",
-          "whash": "87878f8f8f8f80e0"
+          "phash": "80085fdf15b72da9",
+          "dhash": "7ef9f7ccda6909e4",
+          "whash": "00000347ffffff30"
         },
         {
-          "phash": "95cb3cc67a817a85",
-          "dhash": "3474f4f4f0ccfe1e",
-          "whash": "9e3e7e7e3e460600"
+          "phash": "c605148c5ebe3eec",
+          "dhash": "64d68ee903ada948",
+          "whash": "1022e2f4f0ffff00"
         }
       ]
     },
     {
-      "product": "Estampas Dia das Mães",
+      "product": "Arquivo Digital Coleção Cheiro de Rosas",
+      "url": "https://guilhermeangeli.com.br/produto/arquivo-digital-colecao-cheiro-de-rosas/",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/05/2-3.png",
+      "whole_phash": "d969fcf746a014c4",
+      "whole_dhash": "171a9bcb406c386c",
+      "whole_whash": "cb894b7920beff00",
+      "center_phash": "de5e9a2aea44c952",
+      "center_dhash": "397c504a09234c99",
+      "center_whash": "0c1cbef8e0a026ff",
+      "quad_hashes": [
+        {
+          "phash": "cfe0de85cc959312",
+          "dhash": "220919c7c7c56464",
+          "whash": "ffe1c1612137361c"
+        },
+        {
+          "phash": "a0981cbe5fbd4589",
+          "dhash": "349d9bc8cd251746",
+          "whash": "c74761e4e7e78302"
+        },
+        {
+          "phash": "9e1e0fcf03f325a0",
+          "dhash": "6424341c930b09e4",
+          "whash": "161090c4fffdff00"
+        },
+        {
+          "phash": "c3652dad65863cb8",
+          "dhash": "c69a38cc88a1a958",
+          "whash": "0300107cffffff00"
+        }
+      ]
+    },
+    {
+      "product": "Arquivo Digital Estampas Florais",
       "url": "https://guilhermeangeli.com.br/produto/estampas-dia-das-maes/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/6.png",
-      "whole_phash": "94253b111f5a3f1e",
-      "whole_dhash": "aba6a4a4a6a4a531",
-      "whole_whash": "005757567e7e5c14",
-      "center_phash": "af66d5985422d59a",
-      "center_dhash": "6666666666666666",
-      "center_whash": "2333233323b3b3b3",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/04/1-1.png",
+      "whole_phash": "ae4e4bb0f0f4b4a1",
+      "whole_dhash": "27656626262627a6",
+      "whole_whash": "9310139397dfff00",
+      "center_phash": "af4452d256465757",
+      "center_dhash": "c3434343434b4b4b",
+      "center_whash": "303131313b3b3bbb",
       "quad_hashes": [
         {
-          "phash": "803b3b3f3e746c41",
-          "dhash": "5ddaccccccccccc4",
-          "whash": "0022667676767677"
+          "phash": "b61fe0e02f11417f",
+          "dhash": "0c2c5c5c2c8c0c2c",
+          "whash": "e6c6060686e6e6f6"
         },
         {
-          "phash": "9e63636ae90d0d35",
-          "dhash": "c78c2c3234343434",
-          "whash": "20061e1f9e9e9e9e"
+          "phash": "bc67819d983a6a5a",
+          "dhash": "3657453734353534",
+          "whash": "1f8300019f1f9f9f"
         },
         {
-          "phash": "84c07f96c137d1d6",
-          "dhash": "ccc4c4c4c4cc4c1e",
-          "whash": "6657775777070700"
+          "phash": "b6f651f134f141a4",
+          "dhash": "0c2c2c2c2c292d6c",
+          "whash": "c686869686fdff00"
         },
         {
-          "phash": "dc952b6a3996274c",
-          "dhash": "3434343022252523",
-          "whash": "1cfededed8d0d000"
+          "phash": "989c4faa1daa46bc",
+          "dhash": "35b4b4b1b4919110",
+          "whash": "0f1f1f1f1f0dcd00"
         }
       ]
     },
@@ -301,33 +334,33 @@
     {
       "product": "Festa Abelhinha",
       "url": "https://guilhermeangeli.com.br/produto/1685/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/2-2.png",
-      "whole_phash": "cb4eb470f895d191",
-      "whole_dhash": "45455361d192961e",
-      "whole_whash": "e4313930e0f01fdf",
-      "center_phash": "d8d6a754a4c52c75",
-      "center_dhash": "00598080b0b06103",
-      "center_whash": "f8fcf070d8c0b8d1",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-5.png",
+      "whole_phash": "a207cfb034b4b1bd",
+      "whole_dhash": "e741cfcfdf9e6d29",
+      "whole_whash": "1f002f07076fff81",
+      "center_phash": "b842de1e443c656f",
+      "center_dhash": "a5199b9f9b1f37c6",
+      "center_whash": "10efc30303039fff",
       "quad_hashes": [
         {
-          "phash": "9fc7e0e08f97c380",
-          "dhash": "923064646f303233",
-          "whash": "f880bc9f979c8e09"
+          "phash": "99b761c2ae6143d9",
+          "dhash": "cf7e5072b1d19193",
+          "whash": "7f1f1c0f3f7c4800"
         },
         {
-          "phash": "ea9c98d3f5849893",
-          "dhash": "34333327cb030b0b",
-          "whash": "ff1111f3e3c1c1c1"
+          "phash": "aa679d94b14e1a66",
+          "dhash": "be57514f8fbdf5fd",
+          "whash": "1f5f00014f1f1f1f"
         },
         {
-          "phash": "a9593c3cd43eb858",
-          "dhash": "30d3c3cce24b4347",
-          "whash": "0f7978f3780301f3"
+          "phash": "c8097cf601ec49f7",
+          "dhash": "9391f3f3da242464",
+          "whash": "0800117bfffff700"
         },
         {
-          "phash": "f36aea9d1247cc12",
-          "dhash": "0b0b099c1c1a9adc",
-          "whash": "818180000effffff"
+          "phash": "889e19a95ea956ae",
+          "dhash": "fdb5fd7925d3dbd9",
+          "whash": "0f010f1dff7f6900"
         }
       ]
     },
@@ -367,231 +400,231 @@
     {
       "product": "Pascoa Azul 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-azul-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1.png",
-      "whole_phash": "bd4aa623598cda96",
-      "whole_dhash": "2b0e95919bbe3636",
-      "whole_whash": "99c0df590b0f071f",
-      "center_phash": "9fc9a63462e7a170",
-      "center_dhash": "0f3b3b2b397e6c6d",
-      "center_whash": "83bf9d1d081f8f05",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-6.png",
+      "whole_phash": "ae2c63b330b4b49e",
+      "whole_dhash": "5f6127373d6e6d29",
+      "whole_whash": "070017071fbfff81",
+      "center_phash": "840cc7d3df6f41c2",
+      "center_dhash": "e6e6f776fd9a9b65",
+      "center_whash": "301313030f0f6fff",
       "quad_hashes": [
         {
-          "phash": "a4d339ac9d565b24",
-          "dhash": "3c9b486867a7a727",
-          "whash": "8fe1e0b8f3731303"
+          "phash": "b3584ae5b437b14c",
+          "dhash": "0931595e4eca4e4f",
+          "whash": "e598090f8fc723e3"
         },
         {
-          "phash": "f10622e9cf0b33f1",
-          "dhash": "2fac6c7292929292",
-          "whash": "f3260218fbfac8c3"
+          "phash": "be01809fd57e7a60",
+          "dhash": "fcfb812d6c6d75f5",
+          "whash": "1f0b0081bf9f037f"
         },
         {
-          "phash": "accc2d6dc4a6ac36",
-          "dhash": "2793e76544574e0e",
-          "whash": "d340f7b7e6830383"
+          "phash": "be2164ae0de649ae",
+          "dhash": "47dd9b1976242464",
+          "whash": "010149ef9ffff600"
         },
         {
-          "phash": "9160793962cced97",
-          "dhash": "92de65ed5c1a988c",
-          "whash": "4000ff3f0f0f5f0e"
+          "phash": "899e29a95ea91cae",
+          "dhash": "75c5b5b96ddbdbd9",
+          "whash": "01331f1dff7f4900"
         }
       ]
     },
     {
       "product": "Pascoa Azul 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-azul-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/2.png",
-      "whole_phash": "9dc57c1bc2d88b43",
-      "whole_dhash": "2a66f6ac4c59393d",
-      "whole_whash": "93337b7f2f0f0500",
-      "center_phash": "9ceb0d616fc0bb06",
-      "center_dhash": "8373646f0d9bbe7c",
-      "center_whash": "f0b83fb7050f0f06",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-7.png",
+      "whole_phash": "816dec0921fc3c9f",
+      "whole_dhash": "d7f2b4cedcb8396c",
+      "whole_whash": "13105e020e1ffff6",
+      "center_phash": "be678f197146e019",
+      "center_dhash": "7266650d1dbf7e7c",
+      "center_whash": "3a37b3000d1f1f1f",
       "quad_hashes": [
         {
-          "phash": "957357a49c836e64",
-          "dhash": "3c8bd95437e6c670",
-          "whash": "0fc0a01f1f373f1c"
+          "phash": "84b808f42f7eef0c",
+          "dhash": "b7b4a76fc6e4f4f3",
+          "whash": "535f1f3727761801"
         },
         {
-          "phash": "953687ef79d90114",
-          "dhash": "2bac9c3a3a6272da",
-          "whash": "9006068ecafafe3e"
+          "phash": "b238319fc805fd3c",
+          "dhash": "9f9d1929617c6cc8",
+          "whash": "c7c7c0c0fcbe2c2c"
         },
         {
-          "phash": "bd98d3c6a511d8a6",
-          "dhash": "f471333667044e07",
-          "whash": "ff9f9b8383808287"
+          "phash": "8f0d1bd264f414fc",
+          "dhash": "f17332c7870909e4",
+          "whash": "10190323f7ffff00"
         },
         {
-          "phash": "8bd15507f49ea1f0",
-          "dhash": "58dad1e1c3cb6b89",
-          "whash": "3e2cfdfdf9210180"
+          "phash": "c253138237ae1f8f",
+          "dhash": "e8d8f2a0e4e9a948",
+          "whash": "040838f87f7fff00"
         }
       ]
     },
     {
       "product": "Pascoa Azul 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-azul-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/3.png",
-      "whole_phash": "84713f2a4a1e7b87",
-      "whole_dhash": "2b86d0b2e4336676",
-      "whole_whash": "00e27e787e1f1f0a",
-      "center_phash": "c9fc23ed8b462d30",
-      "center_dhash": "131971619392f4d9",
-      "center_whash": "f8fd00fc58fa001f",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/3-5.png",
+      "whole_phash": "874037ae603f782f",
+      "whole_dhash": "c6c492f4e375675e",
+      "whole_whash": "007e487a31bf3f83",
+      "center_phash": "c07e207ee0be44db",
+      "center_dhash": "1990609392f6d5d7",
+      "center_whash": "fc00fc58f8007f73",
       "quad_hashes": [
         {
-          "phash": "837a37389c964d87",
-          "dhash": "3889caeaead3ceca",
-          "whash": "0240607f7f413f3f"
+          "phash": "815c777478963669",
+          "dhash": "38f2eaea93c4dada",
+          "whash": "00383e3e007f3f3f"
         },
         {
-          "phash": "d6242e65d9d91993",
-          "dhash": "2fac3c385c0c0819",
-          "whash": "f00006fefc80fcfc"
+          "phash": "d60f3b2721df242c",
+          "dhash": "7f783c5c0c0c3831",
+          "whash": "001cfcfc80e4fcde"
         },
         {
-          "phash": "b3c5cd32e430dd86",
-          "dhash": "ca4ada8ecf990907",
-          "whash": "7f3f3f4707070700"
+          "phash": "bb81c4bb06e833d5",
+          "dhash": "db5a9a3b5b1b33c6",
+          "whash": "2f3fc0cf8d8dd900"
         },
         {
-          "phash": "d36e5ad142272dd2",
-          "dhash": "0839264fd83288a9",
-          "whash": "c0c4d303ff9fee00"
+          "phash": "bc7f52985380672d",
+          "dhash": "392666b937373349",
+          "whash": "80c003ff9fff1f00"
         }
       ]
     },
     {
       "product": "Páscoa Laranja 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-laranja-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/6.png",
-      "whole_phash": "f9a6ce93ac5806e4",
-      "whole_dhash": "1b1505185659da12",
-      "whole_whash": "ffffc4cac20848c8",
-      "center_phash": "b8adc4e8db32ce18",
-      "center_dhash": "b696721931351d18",
-      "center_whash": "dbd30b0d89858fcc",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-8.png",
+      "whole_phash": "be27c3d03c85b1a3",
+      "whole_dhash": "1f2b6f3f2dbc7729",
+      "whole_whash": "cf000707071fffc9",
+      "center_phash": "a732f363cf9cc102",
+      "center_dhash": "4d4def76e7de7363",
+      "center_whash": "07070713030f3fff",
       "quad_hashes": [
         {
-          "phash": "ed91ea3289896d5a",
-          "dhash": "010d02124a460523",
-          "whash": "ffefe0f8e0e08090"
+          "phash": "f68ea1dcd281332e",
+          "dhash": "c5254d5d251c178e",
+          "whash": "fff78794848083c3"
         },
         {
-          "phash": "b8bea30c3ec33f04",
-          "dhash": "de8f6d35373bdbdd",
-          "whash": "ffff9f9910106801"
+          "phash": "8a61fc95937a7868",
+          "dhash": "fcdf31cfccdd353d",
+          "whash": "3f3f00030f1f171f"
         },
         {
-          "phash": "e86cf4e2725a1197",
-          "dhash": "2333b3336331c186",
-          "whash": "f0f1d080b999e1e7"
+          "phash": "a66170bc2dee099e",
+          "dhash": "878ccdc776242464",
+          "whash": "014061e39fffff00"
         },
         {
-          "phash": "e39bb864e180879f",
-          "dhash": "d99959cb8a8a8c09",
-          "whash": "6fcf2d70e0e074e0"
+          "phash": "889e0df976e954e0",
+          "dhash": "3575b5bdbddbdbd9",
+          "whash": "03071f1ddf7f6900"
         }
       ]
     },
     {
       "product": "Páscoa Laranja 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-laranja-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/7.png",
-      "whole_phash": "9fb0e08f9d393126",
-      "whole_dhash": "1b251939717161a2",
-      "whole_whash": "fff7850d1d1880f0",
-      "center_phash": "8122fcecc5cdd938",
-      "center_dhash": "060d78d2f3f072f0",
-      "center_whash": "f3070e3e1f1c1c3c",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/2-7.png",
+      "whole_phash": "9d65e038cee931b8",
+      "whole_dhash": "965476666e7ad1ac",
+      "whole_whash": "eb0002b01a0effff",
+      "center_phash": "836cfd3fd87042c1",
+      "center_dhash": "3b6381e2c9c9dab8",
+      "center_whash": "893178713d210f7f",
       "quad_hashes": [
         {
-          "phash": "fbc4b36a99824873",
-          "dhash": "810d096210050f1b",
-          "whash": "ffe7f8fe80808181"
+          "phash": "b9cf81e12e391e46",
+          "dhash": "0383333734989c1c",
+          "whash": "f9f9918100cfce0f"
         },
         {
-          "phash": "e99ef0019ffc80c3",
-          "dhash": "decf3533cbc68793",
-          "whash": "ffff8f912060c0c1"
+          "phash": "d9a8a6b6c02d999d",
+          "dhash": "1e303a92141c7690",
+          "whash": "dfcd9ec80cc482ec"
         },
         {
-          "phash": "b93bb3f3a2442686",
-          "dhash": "1f1b3f371f1aca86",
-          "whash": "87838383c780fcf7"
+          "phash": "b232b5d909db44e5",
+          "dhash": "1c1c0c2973a90964",
+          "whash": "0f0700019fffff06"
         },
         {
-          "phash": "ece8b966e01ee03c",
-          "dhash": "93939727266e6c19",
-          "whash": "fbf9f1f0f0a080e0"
+          "phash": "d0511fed748c07a7",
+          "dhash": "12d8ddb19999a958",
+          "whash": "804c045cefffff00"
         }
       ]
     },
     {
       "product": "Páscoa Laranja 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-laranja-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/8.png",
-      "whole_phash": "9fa2e01fc75912c5",
-      "whole_dhash": "1b155564647c71b2",
-      "whole_whash": "fff794b63e0400d0",
-      "center_phash": "81fc3da7e0238937",
-      "center_dhash": "26367283c6d2dbb4",
-      "center_whash": "d392bb797a7b0108",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/03/1-10.png",
+      "whole_phash": "9f3ce4e005cd58b9",
+      "whole_dhash": "a60c7970f17169ac",
+      "whole_whash": "f3040818183cffff",
+      "center_phash": "9113b73f7e3ca240",
+      "center_dhash": "78d8f0b1f170f2e4",
+      "center_whash": "0c0c1c1c181effff",
       "quad_hashes": [
         {
-          "phash": "bcc7902e1dc16ad9",
-          "dhash": "814dc262262eb81c",
-          "whash": "ffe1f0ba80828e8e"
+          "phash": "b9c68db36e1811e5",
+          "dhash": "f0e48a250f1b3b3b",
+          "whash": "fffff000010f0b0f"
         },
         {
-          "phash": "9ea4b3498e9bc331",
-          "dhash": "dfcc3e35352b3b49",
-          "whash": "fff7879d90988804"
+          "phash": "c99cbcf8808387cf",
+          "dhash": "983269cb83939b8b",
+          "whash": "cf8f3c60e0f0f8e0"
         },
         {
-          "phash": "ba18d4cd6b42a5ab",
-          "dhash": "9c3c3d0d3b37cd86",
-          "whash": "cf8f87008183e7e7"
+          "phash": "bc1c099939f93db0",
+          "dhash": "3bff2f2b3e2949e6",
+          "whash": "03010383ffffff00"
         },
         {
-          "phash": "f88bb27c0318f1f8",
-          "dhash": "1921b3b323162409",
-          "whash": "fdfdfd18c0c0c0e0"
+          "phash": "e8791292668a55fd",
+          "dhash": "0b92122327a9a958",
+          "whash": "c0c080f0fbffff00"
         }
       ]
     },
     {
       "product": "Estampas Páscoa 2026",
       "url": "https://guilhermeangeli.com.br/produto/estampas-pascoa-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/1-2.png",
-      "whole_phash": "bcf827e30f94a289",
-      "whole_dhash": "2e363632b2b6b636",
-      "whole_whash": "83c3db989bdb1b02",
-      "center_phash": "8f1724f24317acd6",
-      "center_dhash": "6969616969636b6b",
-      "center_whash": "3d353d3c3c393131",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/3-2.png",
+      "whole_phash": "ae4e43a070bcbdb1",
+      "whole_dhash": "256567242466642c",
+      "whole_whash": "9f109f80d717ff00",
+      "center_phash": "8100e7de6e42e7da",
+      "center_dhash": "d2d2d2d252525256",
+      "center_whash": "303b3b003b7b7b23",
       "quad_hashes": [
         {
-          "phash": "e05b1ba51ea41c7e",
-          "dhash": "8c89848484868704",
-          "whash": "0060e0e7e7e7e707"
+          "phash": "b297e0e80f11d55d",
+          "dhash": "0d2d5c5c2d0d0d2d",
+          "whash": "c7c7860787c7c784"
         },
         {
-          "phash": "f10e6edc49e91923",
-          "dhash": "782cdcdada1898da",
-          "whash": "000707efceeeeec0"
+          "phash": "b86b9490943e7e1b",
+          "dhash": "b6174537b0b5b1b0",
+          "whash": "dfc30081dfdf1f00"
         },
         {
-          "phash": "a4a43f36563769e0",
-          "dhash": "05b496b494864c0c",
-          "whash": "0777777777030700"
+          "phash": "b63261bc1fe160b6",
+          "dhash": "0d2d2d6d2d2d2969",
+          "whash": "00e5e58585ffff00"
         },
         {
-          "phash": "f1e166710ee12eb8",
-          "dhash": "da9810d898909078",
-          "whash": "c0eecfef0e4e4e00"
+          "phash": "9c3c638f1ce3519c",
+          "dhash": "b0b0b0b034b9a9b8",
+          "whash": "001f1f1f1f5dfd00"
         }
       ]
     },
@@ -631,198 +664,198 @@
     {
       "product": "Páscoa Rosa 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-rosa-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/1-1.png",
-      "whole_phash": "b4caa78a59adc8b2",
-      "whole_dhash": "322c94969cb2ae3e",
-      "whole_whash": "bf87d2d0071f0707",
-      "center_phash": "ae68e7b464472731",
-      "center_dhash": "863b7b2b3b2e6861",
-      "center_whash": "c3bd099007073f3f",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/1-4.png",
+      "whole_phash": "ae2e43d330b4b4bc",
+      "whole_dhash": "5f6d273f3d6c4929",
+      "whole_whash": "0f0007070fffff81",
+      "center_phash": "a52de0d83f474363",
+      "center_dhash": "d6f7d7767fdac798",
+      "center_whash": "01030307077f7fef",
       "quad_hashes": [
         {
-          "phash": "e59228aed9547aa5",
-          "dhash": "0c9f984057454656",
-          "whash": "cfe7c0f8eb612260"
+          "phash": "b399e4e2ac97414d",
+          "dhash": "c33951582b8d2fa7",
+          "whash": "ff8d080783e5e1e1"
         },
         {
-          "phash": "9986e2f18e1d8379",
-          "dhash": "48acf468189a12b1",
-          "whash": "fff71e1cc808805d"
+          "phash": "8e61c195956e3a6e",
+          "dhash": "fcd3d13d3c3d65fd",
+          "whash": "7f3f00011f1f131f"
         },
         {
-          "phash": "e5ed6955a4a654a4",
-          "dhash": "56536666c444470f",
-          "whash": "f3f8372777f08100"
+          "phash": "be2164ee09f6099b",
+          "dhash": "a78d995879242464",
+          "whash": "00004fff9dfff600"
         },
         {
-          "phash": "9368589978ed0fb4",
-          "dhash": "93d965495c7abadc",
-          "whash": "000f77e18f3f0f0e"
+          "phash": "8b8e0d895ea97ee0",
+          "dhash": "f5f5b579eddbdbd9",
+          "whash": "13071f357f7f4900"
         }
       ]
     },
     {
       "product": "Páscoa Rosa 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-rosa-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/4.png",
-      "whole_phash": "e9da96a594c4d26a",
-      "whole_dhash": "328b89aaaa4a6225",
-      "whole_whash": "ffc1f8d0c32bb300",
-      "center_phash": "d615d05517f09ca7",
-      "center_dhash": "2849654d6d2c8d95",
-      "center_whash": "84b4b5a524b2e6fc",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/2-2.png",
+      "whole_phash": "ea7ad3a92ca54594",
+      "whole_dhash": "0329282b2bcb4b6c",
+      "whole_whash": "c1c0c00101fdffff",
+      "center_phash": "d70af857025a5f46",
+      "center_dhash": "4d4544cc4e6a8a0a",
+      "center_whash": "a464302222befefe",
       "quad_hashes": [
         {
-          "phash": "e6b932b9546c44ea",
-          "dhash": "0c9fc5c4c4c4a48c",
-          "whash": "cfe7e0f070747444"
+          "phash": "f6c853ab91a95554",
+          "dhash": "0d05040c0c0c0c0c",
+          "whash": "f4f4f0e4e4e0e4c4"
         },
         {
-          "phash": "a6e49bc926668db1",
-          "dhash": "48a4e4c5d7534a4c",
-          "whash": "fff7272140282a2f"
+          "phash": "a56da4d253755c8c",
+          "dhash": "8686c6c26969ef6f",
+          "whash": "c36332e0b8e07737"
         },
         {
-          "phash": "d4c466f39a8b89ac",
-          "dhash": "aca4349919184c0b",
-          "whash": "f6e61e1c1f9fa400"
+          "phash": "d65676f309da08ac",
+          "dhash": "4c0c2431b20909e4",
+          "whash": "000010feffffff00"
         },
         {
-          "phash": "b2974933d168f0b5",
-          "dhash": "cc6dadac2c2d37b1",
-          "whash": "2f2fc727c787011c"
+          "phash": "a6260b8b76b079f4",
+          "dhash": "6f6584c424ada918",
+          "whash": "03010237f7ffff00"
         }
       ]
     },
     {
       "product": "Páscoa Rosa 2026",
       "url": "https://guilhermeangeli.com.br/produto/pascoa-rosa-2026/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/2.png",
-      "whole_phash": "bfcdc782304e162b",
-      "whole_dhash": "6e32222a3f6c6f0c",
-      "whole_whash": "ffdb818383b78106",
-      "center_phash": "825bc03d3da54b5e",
-      "center_dhash": "d1e9e96d6defa6e4",
-      "center_whash": "5c343407003f777f",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/02/3-1.png",
+      "whole_phash": "874037be601f70af",
+      "whole_dhash": "c6d6d2e6257d664e",
+      "whole_whash": "027e607eb1bf3f00",
+      "center_phash": "c07f00ffa1b940de",
+      "center_dhash": "9135e192d2e4bc97",
+      "center_whash": "dd00fc58fa005f73",
       "quad_hashes": [
         {
-          "phash": "f79b8c364952544d",
-          "dhash": "2c4d490b0a0c0c06",
-          "whash": "ffefefc0c0c2c080"
+          "phash": "8f5e70707ab23478",
+          "dhash": "30726a6b534e5a5a",
+          "whash": "00381f3f003f3f3f"
         },
         {
-          "phash": "b7dc8c5b3649289c",
-          "dhash": "f84cac4c4c5ed84c",
-          "whash": "7fffe70606002e07"
+          "phash": "d51d1c032dde2f2c",
+          "dhash": "7c3838584c083832",
+          "whash": "009e9efc00e4dcdf"
         },
         {
-          "phash": "f1666e51ad51b1a2",
-          "dhash": "06061c181a18181f",
-          "whash": "e0e0cfcecfcec081"
+          "phash": "b9c1c4bb07c827c7",
+          "dhash": "5b5a1e335b1b31c4",
+          "whash": "3f3fc0898f8fd900"
         },
         {
-          "phash": "8fb31027d40ff8d4",
-          "dhash": "ccce7b626e736230",
-          "whash": "0f071f3faf031b18"
+          "phash": "bced7098568063bd",
+          "dhash": "302663e03631b248",
+          "whash": "80c301fd9fff1f00"
         }
       ]
     },
     {
       "product": "Kit Festa Cerejinha (Arquivo Digital)",
       "url": "https://guilhermeangeli.com.br/produto/kit-festa-cerejinha-arquivo-digital/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/1-4.png",
-      "whole_phash": "feb0c14b985f6a81",
-      "whole_dhash": "2307293933232200",
-      "whole_whash": "ffffc988180090fc",
-      "center_phash": "8fa1f3c994f1ac09",
-      "center_dhash": "5b4c6d6ce1704860",
-      "center_whash": "ffaf2f3e3c182020",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/1-5.png",
+      "whole_phash": "af4fc1e498b93189",
+      "whole_dhash": "4365777767464729",
+      "whole_whash": "ff20030f1723ff81",
+      "center_phash": "a010fe6ede7c8724",
+      "center_dhash": "25bbbab3c7c72383",
+      "center_whash": "f0410b597371c1fb",
       "quad_hashes": [
         {
-          "phash": "f6893d669aca6464",
-          "dhash": "f09c04e90d050517",
-          "whash": "ffeff0f5e4808080"
+          "phash": "b9ce82e08de1335b",
+          "dhash": "c3305876339b9b1a",
+          "whash": "ffbf0c9e88004b0f"
         },
         {
-          "phash": "a89ce56764c41d6e",
-          "dhash": "e6363693c3e9cf83",
-          "whash": "f7df1fdf010860c0"
+          "phash": "ba63d195b76b0223",
+          "dhash": "9817514f9fb5b53d",
+          "whash": "efdb0081071f471f"
         },
         {
-          "phash": "f626a1f070cace6c",
-          "dhash": "050e2e2d2c2d3404",
-          "whash": "c103808080ffffff"
+          "phash": "b43132be49e661b3",
+          "dhash": "1ab89c927a242464",
+          "whash": "0b0e065a9ffff600"
         },
         {
-          "phash": "e328ddd52e6063c6",
-          "dhash": "87130f87471c1061",
-          "whash": "f3f3810000e0feff"
+          "phash": "b9be61e156a934e0",
+          "dhash": "3d753d393d9bdbd9",
+          "whash": "0f070f0d1fff6b00"
         }
       ]
     },
     {
       "product": "Kit Festa Cerejinha (Arquivo Digital)",
       "url": "https://guilhermeangeli.com.br/produto/kit-festa-cerejinha-arquivo-digital/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/2-4.png",
-      "whole_phash": "daabc7c83159c195",
-      "whole_dhash": "6b691139a5b17154",
-      "whole_whash": "fd89fd80805898fe",
-      "center_phash": "dd30c9af26175a54",
-      "center_dhash": "b292306e646162e2",
-      "center_whash": "5eff0c0202bdbc78",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/2-5.png",
+      "whole_phash": "bfa1e08c1392978f",
+      "whole_dhash": "8f964f0d7f766d29",
+      "whole_whash": "ffc3878703179f00",
+      "center_phash": "ae3aca496fcd1423",
+      "center_dhash": "238d6c2e3fb6e3e6",
+      "center_whash": "91870703031f3f7f",
       "quad_hashes": [
         {
-          "phash": "ff9016809565c9d7",
-          "dhash": "6d0d1a1a1a036e6e",
-          "whash": "ffadc0c3efe18080"
+          "phash": "fcc3989999e47246",
+          "dhash": "1822a52630142635",
+          "whash": "fffdf0f2c8c0c080"
         },
         {
-          "phash": "eaa106d2dc4ef299",
-          "dhash": "a78bc3b7338d6965",
-          "whash": "f76321f1ffe10101"
+          "phash": "93b1ccc7d87e0323",
+          "dhash": "fe3ede3ddeed65fd",
+          "whash": "7f0f070f0f3f0107"
         },
         {
-          "phash": "b7475f7f91070680",
-          "dhash": "6e26c6c69e2c7b04",
-          "whash": "808037774f8781ff"
+          "phash": "bc394ec641c6c1f5",
+          "dhash": "3537371c1c242464",
+          "whash": "c0008b8fdffff600"
         },
         {
-          "phash": "e82e864f6d9c9193",
-          "dhash": "616999151392b090",
-          "whash": "1101dfd0c0f8dcfe"
+          "phash": "ab9e01815ea95e8f",
+          "dhash": "fda535396ddbdbd9",
+          "whash": "0f011f8dff7f4900"
         }
       ]
     },
     {
       "product": "Kit Festa Cerejinha (Arquivo Digital)",
       "url": "https://guilhermeangeli.com.br/produto/kit-festa-cerejinha-arquivo-digital/",
-      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/4-2.png",
-      "whole_phash": "dcaac30acf6b4893",
-      "whole_dhash": "811e2e36b6b2aa22",
-      "whole_whash": "fdffcf820e0800f8",
-      "center_phash": "8ba2f195f18e825d",
-      "center_dhash": "5f4b554d5a697058",
-      "center_whash": "efef01213f3f3800",
+      "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2026/01/3-4.png",
+      "whole_phash": "a1291cde7efc6083",
+      "whole_dhash": "36d7df1f4f4d2d29",
+      "whole_whash": "130b038327ffff01",
+      "center_phash": "b93bd910d8983b78",
+      "center_dhash": "3b0b5b3b878e9e46",
+      "center_whash": "8d8381834143dfff",
       "quad_hashes": [
         {
-          "phash": "e38c1d32ca333dd8",
-          "dhash": "489691c9894dcc45",
-          "whash": "fffffdf0e0404000"
+          "phash": "ad23f5c419cac2b6",
+          "dhash": "4f466b7334e23730",
+          "whash": "2783a7191cf0f19e"
         },
         {
-          "phash": "95ec6663c4837c1d",
-          "dhash": "070636f0d018589c",
-          "whash": "f3f79f7f0e080c00"
+          "phash": "b0fe7f3f1060039c",
+          "dhash": "3c2cac9ebeddd55d",
+          "whash": "8f8f8f47170f010f"
         },
         {
-          "phash": "a727f8da4b853451",
-          "dhash": "cd4fcec7cd0c4800",
-          "whash": "e4c3032300c4ffff"
+          "phash": "de193cb401ee23e6",
+          "dhash": "36304b7b4c242464",
+          "whash": "0008a8bfffffb600"
         },
         {
-          "phash": "d0aa9d122af38f33",
-          "dhash": "1894500c8ccc0c10",
-          "whash": "eedefec040e0ecc0"
+          "phash": "8b9e31f176e95488",
+          "dhash": "d575f5a125dbdbd9",
+          "whash": "0f011f7d3f7f4900"
         }
       ]
     },
