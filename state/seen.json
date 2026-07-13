@@ -1,51 +1,31 @@
 {
   "seen": [
-    "https://www.hnt.com.br/policia/faccionados-exigem-caixinha-ameacam-incendiar-academia-e-aleijar-empresario/562945",
-    "https://pt.pinterest.com/ideas/modelo-de-fazendinha/929434734523/",
-    "https://www.reddit.com/r/Argaming/comments/1uszzeu/dame_una_mega_dibu_y_la_cajita_con_un_sonic_por/?tl=pt-br",
-    "https://www.folhavitoria.com.br/saude/anvisa-determina-apreensao-de-lotes-falsificados-de-mounjaro/",
-    "https://www.poder360.com.br/poder-cultura/gravadoras-e-artistas-querem-rotulo-para-ia-em-musicas/",
-    "https://agorars.com/brasil-e-mundo/anvisa-apreende-lotes-falsificados-mounjaro/",
-    "https://hugogloss.uol.com.br/brasil/anvisa-determina-apreensao-de-lotes-falsificados-de-mounjaro-saiba-quais/",
-    "https://www.cartacapital.com.br/bem-estar/voce-le-o-rotulo-5-segredos-escondidos-nos-produtos-que-afetam-seu-intestino/",
+    "https://www.gynnoticias.com.br/policia/tirzepatida-vendida-no-paraguai-tem-embalagem-reduzida-e-preco-cai-segundo-relatos/2709",
+    "https://www.gynnoticias.com.br/entretenimento/cine-autorama-leva-sessoes-gratuitas-de-cinema-drive-in-ao-parque-mutirama-em-goiania/2740",
+    "https://pt.pinterest.com/ideas/painel-safari-para-imprimir-grátis/960609591011/",
+    "https://pt.pinterest.com/ideas/kit-festa-safari-baby/941184642347/",
+    "https://drivedacrisoficial.com/shop/kits-digitais/kit-digital-ilustracoes-nossa-senhora-de-fatima-2/",
     "https://drivedacrisoficial.com/shop/kits-digitais/kit-digital-super-mario-galaxy-2/",
+    "https://www.reddit.com/r/Argaming/comments/1uszzeu/dame_una_mega_dibu_y_la_cajita_con_un_sonic_por/?tl=pt-br",
     "https://ateliedosarquivos.com.br/produto/kit-digital-colecao-santinhos-em-papel-de-carta-vol-4/",
-    "https://artsublimar.com.br/produto/pack-arte-canecas-batismo-02/",
-    "https://www.arquivossilhouette.com.br/arquivo-topo-de-bolo-dia-dos-namorados-casal-coracao-p211889",
-    "https://ateliedosarquivos.com.br/produto/arquivo-digital-canecas-dia-dos-pais-2/",
-    "https://pt.pinterest.com/ideas/imagens-de-jardim-para-imprimir/908559429491/",
-    "https://pt.pinterest.com/ideas/imagem-para-scrapbook-grátis/958055690138/"
+    "https://ateliedosarquivos.com.br/produto/kit-digital-colecao-nossa-senhora-do-carmo-2/",
+    "https://pt.pinterest.com/ideas/imagem-para-scrapbook-grátis/958055690138/",
+    "https://drivedacrisoficial.com/shop/kits-digitais/kit-digital-zootopia-2-png-e-svg-alfabeto-e-personagens/",
+    "https://jardimdeideiasdigital.com.br/produtos/kit-digital-estrelas-para-um-pequeno-principe1/"
   ],
   "weekly": {
-    "start": 1783861977,
-    "analyzed": 15,
+    "start": 1783909735,
+    "analyzed": 12,
     "alerts": 0,
-    "max": 54.588541666666664,
+    "max": 42.04166666666667,
     "top_scores": [
-      54.588541666666664,
-      48.46875,
-      48.00000000000001,
-      48.00000000000001,
-      47.661458333333336
+      42.04166666666667,
+      42.04166666666667,
+      41.546875,
+      41.546875,
+      39.75
     ],
-    "top_matches": [
-      {
-        "page": "https://pt.pinterest.com/ideas/modelo-de-fazendinha/929434734523/",
-        "product": "4 Embalagens da Fazendinha",
-        "product_url": "https://guilhermeangeli.com.br/produto/arquivo-digital-4-embalagens-da-fazendinha/",
-        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/08/3-scaled.png",
-        "image": "https://s.pinimg.com/images/default_open_graph_1200.png",
-        "score": 54.588541666666664,
-        "raw_score": 61.588541666666664,
-        "whole_score": 63.541666666666664,
-        "center_score": 60.9375,
-        "theme_overlap": 1,
-        "theme_penalty": 0.0,
-        "generic_penalty": 8.0,
-        "dominance_penalty": 0.0,
-        "page_title": "modelo de fazendinha | modelo de fazendinha | modelo de fazendinha | https://pt.pinterest.com/ideas/modelo-de-fazendinha/929434734523/"
-      }
-    ]
+    "top_matches": []
   },
   "pending_emails": []
 }
