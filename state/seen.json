@@ -2,32 +2,50 @@
   "seen": [
     "https://arquivosdepapelaria.com.br/produto/kit-festa-fazendinha-menino-arquivo-digital/",
     "https://www.kriatodesign.com/kit-digital-festa-pokemon-studio-e-pdf",
+    "https://portalpackaging.com.br/frutap-lanca-leite-fermentado-patati-patata-em-embalagem-cartonada-asseptica-de-75g/",
+    "https://anaflordesign.com.br/categoria-produto/kits-digitais/",
     "http://studioprismakitsdigitais.blogspot.com/",
-    "https://amaranttodesign.com.br/produto/kit-cesta-de-cafe-namorados-2024/",
     "https://builustra.lojavirtualnuvem.com.br/kits-digitais-prontos-para-imprimir/aniversario/",
+    "https://www.benditoarquivo.com/arquivo-dia-dos-pais-combo-super-pai",
+    "https://minasencadernacao.com.br/produto/arquivo-kit-festa-roblox-menino-menina-personalizado/",
+    "https://arquivosdepapelaria.com.br/produto/kit-digital-girassol/",
     "https://nickdesigndigital.com/loja/brasil-tropical-kit-encadernacao-especial-video-aulas-aulas-polly-tita/",
     "https://www.mypikstore.com.br/pack-com-23-artes-caramelo-brasil-para-caneca-e-camisa-png",
     "https://nickdesigndigital.com/loja/stray-kids-kit-festa-pronta/",
     "https://crafteriabyvan.com/produto/kit-digital-namorados/",
     "https://www.mypikstore.com.br/mx/20-artes-para-canecas-22-artes-para-camisetas-autismo-png",
-    "https://www.chuvinhadepapel.com.br/product-page/kit-digital-unicórnio",
-    "https://www.alfacrafter.com/collections/novidades/products/dia-dos-pais-kit-digital",
-    "https://www.nogridarquivosdigitais.com.br/encadernacao/arquivos-digitais-agenda/arquivo-de-agenda-infantil-para-imprimir/",
-    "https://lojaatividadessuzano.net/produto/descubra-o-mundo-dos-verbos-com-o-nosso-kit-digital/"
+    "https://loja.infinitepay.io/fabricacriakitsaquarela/tpz5533-kit-digital-aquarela-inspirado-fabrica-de-"
   ],
   "weekly": {
-    "start": 1784600613,
-    "analyzed": 14,
+    "start": 1784641260,
+    "analyzed": 15,
     "alerts": 0,
-    "max": 42.796875,
+    "max": 52.895833333333336,
     "top_scores": [
-      42.796875,
-      40.08854166666667,
-      38.395833333333336,
-      37.90104166666667,
-      37.51041666666667
+      52.895833333333336,
+      46.958333333333336,
+      46.567708333333336,
+      43.44791666666667,
+      40.348958333333336
     ],
-    "top_matches": []
+    "top_matches": [
+      {
+        "page": "https://www.benditoarquivo.com/arquivo-dia-dos-pais-combo-super-pai",
+        "product": "Kit Digital Dia dos Pais",
+        "product_url": "https://guilhermeangeli.com.br/produto/kit-digital-dia-dos-pais/",
+        "reference_image_url": "https://guilhermeangeli.com.br/wp-content/uploads/2025/06/Sem-titulo-8.png",
+        "image": "https://cdnx.jumpseller.com/bendito-arquivo/image/78974090/CINTA_20COM_20AL_C3_87A_20PARA_20CANECA.png?1784599434",
+        "score": 52.895833333333336,
+        "raw_score": 59.895833333333336,
+        "whole_score": 54.166666666666664,
+        "center_score": 60.416666666666664,
+        "theme_overlap": 1,
+        "theme_penalty": 0.0,
+        "generic_penalty": 8.0,
+        "dominance_penalty": 0.0,
+        "page_title": "arquivo dia dos pais combo super pai | arquivo dia dos pais combo super pai | arquivo dia dos pais combo super pai | https://www.benditoarquivo.com/arquivo-dia-dos-pais-combo-super-pai"
+      }
+    ]
   },
   "pending_emails": []
 }
